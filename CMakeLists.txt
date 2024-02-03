@@ -14,18 +14,24 @@ include(cmake/variables.cmake)
 
 # ---- Declare library ----
 
+file(GLOB_RECURSE headers source/headers/*.h)
+file(GLOB_RECURSE c_files source/code/*.c)
+file(GLOB_RECURSE so_files source/*.so)
+
 add_library(
     ProtoNet-linux_lib OBJECT
-    source/lib.c
+    ${headers}
+    ${c_files}
 )
 
 target_include_directories(
     ProtoNet-linux_lib ${warning_guard}
     PUBLIC
-    "$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/source>"
+    "$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/source/headers>"
 )
 
-target_compile_features(ProtoNet-linux_lib PUBLIC c_std_99)
+target_compile_features(ProtoNet-linux_lib PUBLIC c_std_17)
+target_link_libraries(ProtoNet-linux_lib ${so_files})
 
 # ---- Declare executable ----
 
@@ -34,7 +40,7 @@ add_executable(ProtoNet-linux::exe ALIAS ProtoNet-linux_exe)
 
 set_property(TARGET ProtoNet-linux_exe PROPERTY OUTPUT_NAME ProtoNet-linux)
 
-target_compile_features(ProtoNet-linux_exe PRIVATE c_std_99)
+target_compile_features(ProtoNet-linux_exe PRIVATE c_std_17)
 
 target_link_libraries(ProtoNet-linux_exe PRIVATE ProtoNet-linux_lib)
 
