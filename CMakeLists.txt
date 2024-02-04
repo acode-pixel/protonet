@@ -12,6 +12,8 @@ project(
 
 include(cmake/variables.cmake)
 
+message("Building on: ${CMAKE_SYSTEM_NAME}")
+
 # ---- Declare library ----
 
 file(GLOB_RECURSE headers source/headers/*.h)
@@ -31,8 +33,10 @@ target_include_directories(
 )
 
 target_compile_features(ProtoNet-linux_lib PUBLIC c_std_17)
-target_link_libraries(ProtoNet-linux_lib ${so_files})
-
+if(NOT (${CMAKE_SYSTEM_NAME} MATCHES "Darwin"))
+	message("adding libkqueue.so executable")
+	target_link_libraries(ProtoNet-linux_lib ${so_files})
+endif()
 # ---- Declare executable ----
 
 add_executable(ProtoNet-linux_exe source/main.c)
