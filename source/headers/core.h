@@ -9,7 +9,12 @@
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <sys/ioctl.h>
-#include <sys/event.h>
+
+#ifdef __unix__
+	#include "sys/event.h"
+#elif __APPLE__
+	#include <sys/event.h>
+
 #include <netinet/ip.h>
 #include <arpa/inet.h>
 #include <net/if.h>
