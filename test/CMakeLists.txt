@@ -1,7 +1,5 @@
 cmake_minimum_required(VERSION 3.21)
 
-include(cmake/prelude.cmake)
-
 project(
     ProtoNet-linux
     VERSION 0.1.0
@@ -9,39 +7,3 @@ project(
     HOMEPAGE_URL "https://example.com/"
     LANGUAGES C
 )
-
-include(cmake/variables.cmake)
-
-message("Building on: ${CMAKE_SYSTEM_NAME}")
-
-# ---- Declare library ----
-
-file(GLOB_RECURSE headers source/headers/*.h)
-file(GLOB_RECURSE c_files source/code/*.c)
-file(GLOB_RECURSE so_files source/*.so)
-
-target_include_directories(
-    ProtoNet-linux_lib ${warning_guard}
-    PUBLIC
-    "$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/source/headers>"
-)
-
-target_compile_features(ProtoNet-linux_lib PUBLIC c_std_17)
-if(NOT (${CMAKE_SYSTEM_NAME} MATCHES "Darwin"))
-	message("adding libkqueue.so executable")
-	target_link_libraries(ProtoNet-linux_lib ${so_files})
-endif()
-# ---- Declare executable ----
-
-set_property(TARGET ProtoNet-linux_exe PROPERTY OUTPUT_NAME ProtoNet-linux)
-
-target_compile_features(ProtoNet-linux_exe PRIVATE c_std_17)
-
-target_link_libraries(ProtoNet-linux_exe PRIVATE ProtoNet-linux_lib)
-
-# ---- Install rules ----
-
-if(NOT CMAKE_SKIP_INSTALL_RULES)
-  include(cmake/install-rules.cmake)
-endif()
-
