@@ -24,9 +24,9 @@ message("${headers}")
 
 add_library(
     ProtoNet-linux_lib OBJECT
+    source/headers/core.h
     source/headers/client.h
     source/headers/server.h
-    source/headers/core.h
     ${headers}
     ${c_files}
 )
