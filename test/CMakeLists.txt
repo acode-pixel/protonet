@@ -45,4 +45,3 @@ if(NOT CMAKE_SKIP_INSTALL_RULES)
   include(cmake/install-rules.cmake)
 endif()
 
-include(cmake/dev-mode.cmake)
