@@ -30,7 +30,7 @@ int connectToNetwork(char* IP, Client* cli){
 	fcntl(tcpSocket, F_SETFL, O_NONBLOCK, 1);
 
 	struct kevent ev;
-	EV_SET(&ev, cli->Socket, EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, "CLIENT");
+	EV_SET(&ev, cli->Socket, EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, (void*)"CLIENT");
 	kevent(cli->kqueueInstance, &ev, 1, NULL, 0, NULL);
 	return tcpSocket;
 
@@ -50,12 +50,12 @@ int makeFileReq(Client* client, char File[]){
 	free(br);
 	return 0;
 
-};
+}
 
 bool clientCheckSocket(Client* client){
-	struct timespec* ts = {1, 0};
+	struct timespec ts = {1, 0};
 
-	int nSockets = kevent(client->kqueueInstance, NULL, 0, NULL, 1, ts);
+	int nSockets = kevent(client->kqueueInstance, NULL, 0, NULL, 1, &ts);
 
 	if (nSockets == 0){
 		return false;

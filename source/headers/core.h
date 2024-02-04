@@ -6,7 +6,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <string.h>
-#include <sys/time.h>
+#include <time.h>
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <sys/ioctl.h>
@@ -30,8 +30,6 @@ typedef unsigned int uint;
 #define SPTP_BROD 1
 #define SPTP_TRAC 2
 #define SPTP_DATA 3
-
-//typedef unsigned int uint;
 
 struct BROD {
 	uint8_t hops;

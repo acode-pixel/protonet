@@ -16,14 +16,19 @@ message("Building on: ${CMAKE_SYSTEM_NAME}")
 
 # ---- Declare library ----
 
-file(GLOB_RECURSE headers source/headers/*.h)
+file(GLOB_RECURSE headers source/headers/*/*.h)
 file(GLOB_RECURSE c_files source/code/*.c)
 file(GLOB_RECURSE so_files source/*.so)
+
+message("${headers}")
 
 add_library(
     ProtoNet-linux_lib OBJECT
     ${headers}
     ${c_files}
+    source/headers/client.h
+    source/headers/server.h
+    source/headers/core.h
 )
 
 target_include_directories(
