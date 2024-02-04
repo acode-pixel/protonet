@@ -24,11 +24,11 @@ message("${headers}")
 
 add_library(
     ProtoNet-linux_lib OBJECT
-    ${headers}
-    ${c_files}
     source/headers/client.h
     source/headers/server.h
     source/headers/core.h
+    ${headers}
+    ${c_files}
 )
 
 target_include_directories(
