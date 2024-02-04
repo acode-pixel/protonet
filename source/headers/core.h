@@ -14,6 +14,7 @@
 	#include "sys/event.h"
 #elif __APPLE__
 	#include <sys/event.h>
+#endif
 
 #include <netinet/ip.h>
 #include <arpa/inet.h>
