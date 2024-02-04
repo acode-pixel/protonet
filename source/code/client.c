@@ -53,9 +53,9 @@ int makeFileReq(Client* client, char File[]){
 };
 
 bool clientCheckSocket(Client* client){
-	struct timespec ts = {1, 0};
+	struct timespec* ts = {1, 0};
 
-	int nSockets = kevent(client->kqueueInstance, NULL, 0, NULL, 1, &ts);
+	int nSockets = kevent(client->kqueueInstance, NULL, 0, NULL, 1, ts);
 
 	if (nSockets == 0){
 		return false;
