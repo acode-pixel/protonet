@@ -24,6 +24,7 @@
 #include <assert.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <linux/if.h>
 
 typedef unsigned int uint;
 
