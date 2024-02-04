@@ -24,6 +24,8 @@
 #include <unistd.h>
 #include <fcntl.h>
 
+typedef unsigned int uint;
+
 #define SPTP_BROD 1
 #define SPTP_TRAC 2
 #define SPTP_DATA 3
