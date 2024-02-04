@@ -20,12 +20,6 @@ file(GLOB_RECURSE headers source/headers/*.h)
 file(GLOB_RECURSE c_files source/code/*.c)
 file(GLOB_RECURSE so_files source/*.so)
 
-add_library(
-    ProtoNet-linux_lib OBJECT
-    ${headers}
-    ${c_files}
-)
-
 target_include_directories(
     ProtoNet-linux_lib ${warning_guard}
     PUBLIC
@@ -38,9 +32,6 @@ if(NOT (${CMAKE_SYSTEM_NAME} MATCHES "Darwin"))
 	target_link_libraries(ProtoNet-linux_lib ${so_files})
 endif()
 # ---- Declare executable ----
-
-add_executable(ProtoNet-linux_exe source/main.c)
-add_executable(ProtoNet-linux::exe ALIAS ProtoNet-linux_exe)
 
 set_property(TARGET ProtoNet-linux_exe PROPERTY OUTPUT_NAME ProtoNet-linux)
 
