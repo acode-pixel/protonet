@@ -13,7 +13,7 @@ default(
     include/*.h
     test/*.c test/*.h
 )
-default(FIX NO)
+default(FIX YES)
 
 set(flag --output-replacements-xml)
 set(args OUTPUT_VARIABLE output)
