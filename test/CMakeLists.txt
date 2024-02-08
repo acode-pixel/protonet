@@ -7,3 +7,5 @@ project(
     HOMEPAGE_URL "https://example.com/"
     LANGUAGES C
 )
+enable_testing()
+add_test(Protonet-linux_test $<TARGET_FILE:ProtoNet-linux>)
