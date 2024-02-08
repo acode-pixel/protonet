@@ -9,7 +9,7 @@ Server* Init(char* inter, char* ip, char* serverName, char Dir[]){
 	}
 	
 	// alloc server 
-	Server* serv = (Server*) malloc(sizeof(Server) + strlen(Dir));
+	Server* serv = (Server*) malloc(sizeof(Server) + strlen(Dir)+1);
 	memset(serv, 0, sizeof(Server) + strlen(Dir));
 	serv->ServerOpts.socketOpt.keepalive = 1;
 	serv->ServerOpts.socketOpt.reuseaddr = 1;

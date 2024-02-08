@@ -8,4 +8,5 @@ project(
     LANGUAGES C
 )
 enable_testing()
-add_test(Protonet-linux_test $<TARGET_FILE:ProtoNet-linux>)
+target_sources(ProtoNet-linux_exe PUBLIC ${PROJECT_SOURCE_DIR}/source/main.c)
+add_test(NAME Test1 COMMAND ProtoNet-linux_exe)
