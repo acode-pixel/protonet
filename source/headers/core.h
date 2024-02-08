@@ -13,18 +13,19 @@
 
 #ifdef __unix__
 	#include "sys/event.h"
+	#include <net/if.h>
+	#include <linux/if.h>
 #elif __APPLE__
 	#include <sys/event.h>
+	#include <net/if.h>
 #endif
 
 #include <netinet/ip.h>
 #include <arpa/inet.h>
-#include <net/if.h>
 #include <errno.h>
 #include <assert.h>
 #include <unistd.h>
 #include <fcntl.h>
-#include <linux/if.h>
 
 typedef unsigned int uint;
 
