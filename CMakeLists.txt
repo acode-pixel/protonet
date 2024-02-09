@@ -23,7 +23,7 @@ file(GLOB_RECURSE so_files source/*.so)
 message("${headers}")
 
 add_library(
-    ProtoNet-linux_lib OBJECT
+    ProtoNet-linux_lib SHARED
     source/headers/core.h
     source/headers/client.h
     source/headers/server.h
@@ -44,7 +44,7 @@ if(NOT (${CMAKE_SYSTEM_NAME} MATCHES "Darwin"))
 endif()
 # ---- Declare executable ----
 
-add_executable(ProtoNet-linux_exe)
+add_executable(ProtoNet-linux_exe source/main.c)
 add_executable(ProtoNet-linux::exe ALIAS ProtoNet-linux_exe)
 
 set_property(TARGET ProtoNet-linux_exe PROPERTY OUTPUT_NAME ProtoNet-linux)
@@ -62,7 +62,6 @@ endif()
 # ---- Developer mode ----
 
 if(NOT ProtoNet-linux_DEVELOPER_MODE)
-  target_sources(ProtoNet-linux_exe PUBLIC source/main.c)
   return()
 elseif(NOT PROJECT_IS_TOP_LEVEL)
   message(
