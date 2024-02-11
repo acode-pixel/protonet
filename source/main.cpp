@@ -12,6 +12,7 @@ extern "C" {
 	#include "server.h"
 	#include "core.h"
 }
+
 int main(int argc, char* argv[]){
 	
 	if (strcmp(argv[1], "client")==0){
