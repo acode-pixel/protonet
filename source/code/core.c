@@ -1,20 +1,22 @@
 #include "core.h"
 
+FILE* flog;
+
 int Init(void){
 	// put logs to file
   	time_t t = time(NULL);
   	struct tm tm = *localtime(&t);
 	char fname[255];
 	sprintf(fname, "ProtoNetAPI-0.1_%d:%02d:%02d_%02d:%02d:%02d.txt", tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
-	f = fopen(fname, "w");
+	flog = fopen(fname, "w");
 	
-	if(f == NULL){
+	if(flog == NULL){
 		perror("Failed creating log file");
 		exit(-1);
 	}
 
-	log_add_fp(f, LOG_DEBUG);
-	log_info("Started at %d/%02d/%02d_%02d:%02d:%02d", tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
+	log_add_fp(flog, LOG_DEBUG);
+	log_info("Started at %d:%02d:%02d_%02d:%02d:%02d", tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
 
 	return 0;
 }
@@ -100,11 +102,11 @@ int fillTracItem(tracItem* trac, uint tracID, char* fileRequester, uint8_t hops,
 
 void failCallback(log_Event *ev){
 	log_info("Shutting down API due to fatal error");
-	fclose(f);
+	fclose(flog);
 	exit(-1);
 }
 
 void Stop(void){
 	log_info("Shutting down API");
-	fclose(f);
+	fclose(flog);
 }

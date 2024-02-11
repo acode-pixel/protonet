@@ -34,8 +34,6 @@ typedef unsigned int uint;
 #define SPTP_TRAC 2
 #define SPTP_DATA 3
 
-FILE* f;
-
 struct BROD {
 	uint8_t hops;
 	char fileReq[];
