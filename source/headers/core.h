@@ -26,7 +26,7 @@
 #include <assert.h>
 #include <unistd.h>
 #include <fcntl.h>
-#include "TP/log/log.h"
+#include "log.h"
 
 typedef unsigned int uint;
 

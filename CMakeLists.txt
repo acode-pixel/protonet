@@ -34,6 +34,7 @@ target_include_directories(
     ProtoNet-linux_lib ${warning_guard}
     PUBLIC
     "$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/source/headers>"
+    "$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/source/headers/TP/log>"
 )
 
 target_compile_features(ProtoNet-linux_lib PUBLIC c_std_17)
