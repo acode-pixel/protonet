@@ -7,7 +7,7 @@ project(
     VERSION 0.1.0
     DESCRIPTION "Short description"
     HOMEPAGE_URL "https://example.com/"
-    LANGUAGES C
+    LANGUAGES CXX C
 )
 
 include(cmake/variables.cmake)
@@ -16,18 +16,17 @@ message("Building on: ${CMAKE_SYSTEM_NAME}")
 
 # ---- Declare library ----
 
-file(GLOB_RECURSE headers source/headers/*/*.h)
+file(GLOB_RECURSE secondary_headers source/headers/*/*.h)
+file(GLOB main_headers source/headers/*.h)
 file(GLOB_RECURSE c_files source/code/*.c)
 file(GLOB_RECURSE so_files source/*.so)
 
-message("${headers}")
+message("${secondary_headers}")
 
 add_library(
-    ProtoNet-linux_lib SHARED
-    source/headers/core.h
-    source/headers/client.h
-    source/headers/server.h
-    ${headers}
+    ProtoNet-linux_lib OBJECT
+    ${main_headers}
+    ${secondary_headers}
     ${c_files}
 )
 
@@ -44,12 +43,12 @@ if(NOT (${CMAKE_SYSTEM_NAME} MATCHES "Darwin"))
 endif()
 # ---- Declare executable ----
 
-add_executable(ProtoNet-linux_exe source/main.c)
+add_executable(ProtoNet-linux_exe source/main.cpp)
 add_executable(ProtoNet-linux::exe ALIAS ProtoNet-linux_exe)
 
 set_property(TARGET ProtoNet-linux_exe PROPERTY OUTPUT_NAME ProtoNet-linux)
 
-target_compile_features(ProtoNet-linux_exe PRIVATE c_std_17)
+target_compile_features(ProtoNet-linux_exe PRIVATE cxx_std_17)
 
 target_link_libraries(ProtoNet-linux_exe PRIVATE ProtoNet-linux_lib)
 

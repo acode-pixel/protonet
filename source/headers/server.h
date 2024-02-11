@@ -47,7 +47,7 @@ typedef struct Server {
 #include "serverModules/dataModule.h"
 #include "clientModules/parserModules.h"
 
-Server* Init(char* inter, char* ip, char* serverName, char Dir[]);
+Server* S_Init(char* inter, char* ip, char* serverName, char Dir[]);
 int checkSockets(Server* serv, int fds[]);
 int SocketManager(int fds[], Server* serv);
 int ServerListen(Server* serv);

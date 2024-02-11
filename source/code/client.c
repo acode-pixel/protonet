@@ -1,18 +1,33 @@
 #include "client.h"
 
 Client* Cl_Init(char* inter, char name[]){
+	log_add_callback(failCallback, NULL, 5);
+
 	Client* cli = (Client*) malloc(sizeof(Client));
 	cli->Socket = socket(AF_INET, SOCK_STREAM, 0);
+	log_info("Client Socket: %i", cli->Socket);
+
 	cli->kqueueInstance = kqueue();
+	log_debug("Client kqueue: %i", cli->kqueueInstance);
+
 	struct in_addr addr;
 	addr.s_addr = getInterIP(cli->Socket, inter);
+	log_info("Client IP: %s", inet_ntoa(addr));
+
 	if (name == NULL){
 		strcpy(cli->name, (char*)(inet_ntoa(addr)));
 	} 
-	
 	else {strcpy(cli->name, name);}
+	log_info("Client name: %s", cli->name);
 
-	return cli;
+	if(cli != NULL && cli->Socket != 0 && cli->kqueueInstance != 0 && cli->name != NULL){
+		log_info("Successfully created Client");
+		return cli;
+	} else {
+		free(cli);
+		log_error("An error occured while creating Client");
+		return NULL;
+	}
 }
 
 int connectToNetwork(char* IP, Client* cli){
@@ -26,6 +41,7 @@ int connectToNetwork(char* IP, Client* cli){
 	if (connect(tcpSocket, (struct sockaddr*)&sockaddr, sizeof(sockaddr)) == -1){
 		return -1;
 	}
+	log_info("Connected to %s", IP);
 
 	fcntl(tcpSocket, F_SETFL, O_NONBLOCK, 1);
 
@@ -33,7 +49,6 @@ int connectToNetwork(char* IP, Client* cli){
 	EV_SET(&ev, cli->Socket, EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, (void*)"CLIENT");
 	kevent(cli->kqueueInstance, &ev, 1, NULL, 0, NULL);
 	return tcpSocket;
-
 }
 
 int makeFileReq(Client* client, char File[]){

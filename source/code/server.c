@@ -1,19 +1,19 @@
 #include "server.h"
 
-Server* Init(char* inter, char* ip, char* serverName, char Dir[]){
-	// Check if Dir is NULL
-	assert(Dir != NULL);
+Server* S_Init(char* inter, char* ip, char* serverName, char Dir[]){
+	log_add_callback(failCallback, NULL, 5);
+
 	if (access(Dir, R_OK) == -1){
-		perror("Direcotry Not Accessible:");
+		log_error("Directory %s not accessible", Dir);
 		return NULL;
 	}
 	
 	// alloc server 
 	Server* serv = (Server*) malloc(sizeof(Server) + strlen(Dir)+1);
 	memset(serv, 0, sizeof(Server) + strlen(Dir));
-	serv->ServerOpts.socketOpt.keepalive = 1;
-	serv->ServerOpts.socketOpt.reuseaddr = 1;
+
 	serv->Socket = socket(AF_INET, SOCK_STREAM, 0);
+	log_info("Server Socket: %i", serv->Socket);
 	// for sockets
 	struct sockaddr_in sockaddr;
 	sockaddr.sin_family = AF_INET;
@@ -24,16 +24,19 @@ Server* Init(char* inter, char* ip, char* serverName, char Dir[]){
 
 	sockaddr.sin_addr.s_addr = getInterIP(serv->Socket, inter);
 
-	//serv->Clientlist.nClients = 0;
 	serv->IP = sockaddr.sin_addr.s_addr; // src IP
+	log_info("Server IP: %s", inet_ntoa(*((struct in_addr*)&serv->IP)));
 
 	strcpy(serv->serverName, serverName);
+	log_info("Server name: %s", serv->serverName);
 	memcpy(serv->dir, Dir, strlen(Dir));
+	log_info("Server dir: %s", serv->dir);
 	
 	setSockOpts(serv->Socket, &serv->ServerOpts.socketOpt, "\x01\x01\x00");
 
 	if (bind(serv->Socket, (struct sockaddr*)&sockaddr, sizeof(sockaddr)) == -1){
-		perror("Server::Init::Error BIND");
+		log_error("Failed binding to Socket: %i", serv->Socket);
+		free(serv);
 		return NULL;
 	}
 
@@ -42,22 +45,35 @@ Server* Init(char* inter, char* ip, char* serverName, char Dir[]){
 	serv->ServerOpts.socklen = sizeof(sockaddr);
 
 	strcpy(serv->client.name, serverName);
+
 	if (strlen(ip) > 0){
 		serv->client.Socket = connectToNetwork(ip, &serv->client);
 		serv->destIP = inet_addr(ip);
+		log_info("Server's client socket: %i", serv->client.Socket);
 	}
 
 	serv->kqueueInstance = kqueue();
+	log_debug("Server kqueue: %i", serv->kqueueInstance);
 	serv->lkqueueInstance = kqueue();
+	log_debug("Server lkqueue: %i", serv->lkqueueInstance);
 
 	struct kevent ev;
 	EV_SET(&ev, serv->Socket, EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, "LISTEN");
 	kevent(serv->lkqueueInstance, &ev, 1, NULL, 0, NULL);
+
 	if(serv->client.Socket > 0){
 		EV_SET(&ev, serv->client.Socket, EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, NULL);
 		kevent(serv->kqueueInstance, &ev, 1, NULL, 0, NULL);
 	}
-	return serv;
+
+	if(serv->Socket != 0 && serv->kqueueInstance != 0 && serv->lkqueueInstance != 0 && serv->IP != 0 && serv->serverName != NULL){
+		log_info("Successfully created Server");
+		return serv;
+	} else {
+			free(serv);
+			log_error("An error occured while creating Server");
+			return NULL;
+		}
 }
 
 int checkSockets(Server* serv, int fds[]){

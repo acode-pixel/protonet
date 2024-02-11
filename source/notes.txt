@@ -2,6 +2,8 @@ TODO:
 	create client module (handles broadcasting/re-broadcasting messages through the network, client side functions)
 	create server modue (handles serving files and general sendig of files)
 	create core (see notes for functions)
+	turn client & server files to cpp
+	
 
 notes:
 	use epoll to run caller without stopping program

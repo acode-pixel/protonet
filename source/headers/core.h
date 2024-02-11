@@ -26,12 +26,15 @@
 #include <assert.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include "TP/log.c/log.h"
 
 typedef unsigned int uint;
 
 #define SPTP_BROD 1
 #define SPTP_TRAC 2
 #define SPTP_DATA 3
+
+FILE* f;
 
 struct BROD {
 	uint8_t hops;
@@ -87,5 +90,7 @@ uint32_t getInterIP(int fd,char inter[]);
 int sendPck(int fd, char *Name, uint8_t Mode, void* data, uint size);
 int readPck(int fd, Packet* buf);
 int fillTracItem(tracItem* trac, uint tracID, char* fileRequester, uint8_t hops, uint8_t lifetime, void* fileOffset, char* fileReq);
-
+void failCallback(log_Event *ev);
+int Init(void);
+void Stop(void);
 #endif

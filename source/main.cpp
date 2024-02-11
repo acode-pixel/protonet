@@ -1,15 +1,17 @@
-#include <stdlib.h>
-#include <stdbool.h>
-#include <stdio.h>
-#include <stdint.h>
-#include <string.h>
+#include <cstdlib>
+#include <cstdbool>
+#include <cstdio>
+#include <cstdint>
+#include <string>
 #include <unistd.h>
 #include <sys/event.h>
 #include <sys/time.h>
-#include "client.h"
-#include "server.h"
-#include "core.h"
 
+extern "C" {
+	#include "client.h"
+	#include "server.h"
+	#include "core.h"
+}
 int main(int argc, char* argv[]){
 	
 	if (strcmp(argv[1], "client")==0){
