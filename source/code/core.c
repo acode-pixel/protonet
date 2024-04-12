@@ -54,12 +54,14 @@ int sendPck(int fd, char* Name, uint8_t Mode, void* data, uint size){
 	memcpy(pck->Proto, "SPTP", 4);
 	memcpy(pck->Name, Name, 12);
 	pck->Mode = Mode;
+
 	if (pckSize > 1024){
 		errno = 84;
 		perror("Pck creation error");
 		free(pck);
 		return -1;
 	}
+	
 	memcpy(pck->data, data, pckSize);
 	pck->datalen = pckSize+1;
 

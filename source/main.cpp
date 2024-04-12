@@ -16,8 +16,7 @@ extern "C" {
 int main(int argc, char* argv[]){
 	
 	if (strcmp(argv[1], "client")==0){
-		Client* test1 = NULL;
-		test1 = Cl_Init(argv[2], argv[3]);
+		Client* test1 = Cl_Init(argv[2], argv[3]);
 
 		if (connectToNetwork(argv[4], test1) == -1){
 			perror("Failed to connect to client");
@@ -26,8 +25,7 @@ int main(int argc, char* argv[]){
 
 		makeFileReq(test1, argv[5]);
 
-		Packet* buf = NULL;
-		buf = (Packet*) malloc(sizeof(Packet));
+		Packet* buf = (Packet*) malloc(sizeof(Packet));
 
 		while (test1->trac.deleted == 0){
 
@@ -54,8 +52,7 @@ int main(int argc, char* argv[]){
 	}
 
 	if (strcmp(argv[1], "serv") == 0){
-		Server* test2 = NULL;
-		test2 = Init(argv[2], argv[3], argv[4], argv[5]);
+		Server* test2 = Init(argv[2], argv[3], argv[4], argv[5]);
 
 		assert(test2 != NULL);
 
