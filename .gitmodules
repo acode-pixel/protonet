@@ -1,6 +1,0 @@
-[submodule "source/code/TP/log"]
-	path = source/code/TP/log
-	url = https://github.com/rxi/log.c
-[submodule "TP/log"]
-	path = TP/log
-	url = https://github.com/rxi/log.c

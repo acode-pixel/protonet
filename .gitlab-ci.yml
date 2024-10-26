@@ -1,0 +1,47 @@
+# You can override the included template(s) by including variable overrides
+# SAST customization: https://docs.gitlab.com/ee/user/application_security/sast/#customizing-the-sast-settings
+# Secret Detection customization: https://docs.gitlab.com/ee/user/application_security/secret_detection/pipeline/#customization
+# Dependency Scanning customization: https://docs.gitlab.com/ee/user/application_security/dependency_scanning/#customizing-the-dependency-scanning-settings
+# Container Scanning customization: https://docs.gitlab.com/ee/user/application_security/container_scanning/#customizing-the-container-scanning-settings
+# Note that environment variables can be set in several places
+# See https://docs.gitlab.com/ee/ci/variables/#cicd-variable-precedence
+stages:
+  - test-linux-Release
+  - test-linux-Debug
+
+test-linux-Release:
+  stage: test-linux-Release
+  image: gcc:latest
+  script:
+    - apt-get update
+    - apt install -y python3-full cmake pip
+    - python3 -m venv .venv
+    - source .venv/bin/activate
+    - pip install conan
+    - conan profile detect --force
+    - conan install . --build=libuv/1.49.2 -o libuv/*:shared=True
+    - cmake --preset conan-release
+    - cmake --build ./build/Release
+    - cd build/Release && ctest
+
+
+test-linux-Debug:
+  stage: test-linux-Debug
+  image: gcc:latest
+  script:
+    - apt-get update
+    - apt install -y python3-full cmake pip
+    - python3 -m venv .venv
+    - source .venv/bin/activate
+    - pip install conan
+    - conan profile detect --force
+    - conan install . --build=libuv/1.49.2 -s build_type=Debug -o libuv/*:shared=False
+    - cmake --preset conan-debug -DCMAKE_BUILD_TYPE=Debug
+    - cmake --build ./build/Debug
+    - cd build/Debug && ctest
+
+
+#sast:
+#  stage: test
+#include:
+#- template: Security/SAST.gitlab-ci.yml
