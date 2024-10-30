@@ -8,6 +8,6 @@ void* Client_new(char* inter, char name[], uv_loop_t* loop) {
 void Client_delete(void* client) {
     Client* obj;
     obj = static_cast<Client*>(client);
-    //delete obj;
-    //obj = nullptr;
+    delete obj;
+    obj = nullptr;
 }

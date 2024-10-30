@@ -18,7 +18,7 @@ Client::Client(char* inter, char name[], uv_loop_t* loop){
 		this->loop = loop;
 		return;
 	} else {
-		delete(this);
+		delete this;
 		log_error("An error occured while creating Client.[%s]", strerror(errno));
 		return;
 	}
@@ -26,7 +26,9 @@ Client::Client(char* inter, char name[], uv_loop_t* loop){
 
 Client::~Client(){
 	this->loop = nullptr;
-	uv_close((uv_handle_t*)&this->socket, NULL);
+	if(uv_is_active((uv_handle_t*)&this->socket) != 0){
+		uv_close((uv_handle_t*)&this->socket, NULL);
+	}
 	return;
 }
 
