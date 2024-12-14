@@ -5,9 +5,9 @@
 ```
 pip install conan
 conan profile detect
-conan install .
+conan install . -s build_type=<Debug/Release>
 ```
-**Build**
+**Build (Debug/Release) **
 ```
 cmake --preset=conan-<build_preset>
 cmake --build ./build/<preset_buildDir>
