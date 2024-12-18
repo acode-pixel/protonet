@@ -1,7 +1,8 @@
 .vsconan/*
 build/*
+Testing/*
 .vscode/*
 CMakeFiles/*
 CMakeCache.txt
-CmakeUserPresets.json
+*.json
 .venv/*
