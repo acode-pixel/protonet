@@ -41,14 +41,14 @@ void loop_thread(void* arg) {
         uv_connect_t req;
         uv_tcp_t tcpHandle1;
 
-        uv_ip4_addr("0.0.0.0", 5657, &addr);
+        uv_ip4_addr("127.0.0.1", 5657, &addr);
         uv_tcp_init(loop1, &tcpHandle1);
         uv_tcp_connect(&req, &tcpHandle1, (struct sockaddr*)&addr, on_connect);
     } else if(strcmp((char*)(static_cast<uv_loop_t*>(arg)->data), "server") == 0){
         uv_loop_t* loop2 = (uv_loop_t*)arg;
 
         uv_tcp_init(loop2, &Server);
-        uv_ip4_addr("0.0.0.0", 5657, &addr);
+        uv_ip4_addr("127.0.0.1", 5657, &addr);
         uv_tcp_bind(&Server, (struct sockaddr*)&addr, NULL);
         uv_listen((uv_stream_t*)&Server, 10, on_connection);
     }
