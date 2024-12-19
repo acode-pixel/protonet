@@ -12,7 +12,7 @@ int main(int argc, char** argv){
     #ifdef _WIN32
     client = new Client("WiFi", "test", protonet2->loop);
     #else
-    client = new Client("lo", "test", protonet2->loop);
+    client = new Client("lo0", "test", protonet2->loop);
     #endif
     protonet2->Client = client;
     failTest();
