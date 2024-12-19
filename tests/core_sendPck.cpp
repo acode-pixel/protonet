@@ -20,7 +20,7 @@ void alloc_cb(uv_handle_t* handle, size_t suggested_size, uv_buf_t* buf) {
 
 void read_cb(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf){
     if(nread > 0){
-        exit(0);
+        uv_read_stop(stream);
     } else {
         exit(-1);
     }

@@ -6,6 +6,7 @@ void* Server_new(char* inter, char* serverName, char Dir[], char* peerIp, uv_loo
 }
 
 void Server_delete(void* server) {
+    if (server == NULL){return;};
     Server* obj;
     obj = static_cast<Server*>(server);
     delete obj;

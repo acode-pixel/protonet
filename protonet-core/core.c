@@ -23,6 +23,8 @@ Protonet* Init(void){
 	_p = malloc(sizeof(Protonet));
 	_p->isUp = true;
 	_p->loop = malloc(sizeof(uv_loop_t));
+	_p->Client = NULL;
+	_p->Server = NULL;
 	uv_loop_init(_p->loop);
 	return _p;
 }
