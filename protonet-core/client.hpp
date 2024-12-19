@@ -5,7 +5,6 @@ extern "C" {
     #include "./core.h"
     #include "./log.h"
 }
-#define C_PORT 5657
 
 class Client {
     public:

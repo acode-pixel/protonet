@@ -126,6 +126,7 @@ void failCallback(log_Event *ev){
 	fclose(flog);
 	_p->isUp = false;
 	Client_delete(_p->Client);
+	Server_delete(_p->Server);
 	//_p = NULL;
 	#ifndef DEBUG
 	exit(-1);

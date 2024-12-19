@@ -19,11 +19,15 @@
 #include <time.h>
 #include "./log.h"
 #include "./client-wrapper.h"
+#include "./server-wrapper.h"
 #include <uv.h>
 
 #define SPTP_BROD 1
 #define SPTP_TRAC 2
 #define SPTP_DATA 3
+
+#define C_PORT 5657
+#define S_PORT 5657
 
 typedef unsigned int uint;
 
@@ -80,7 +84,7 @@ typedef struct Protonet {
 	bool isUp;
 	uv_loop_t* loop;
 	void* Client; // Client var
-	// Server var
+	void* Server; // Server var
 } Protonet;
 
 #ifdef DEBUG
