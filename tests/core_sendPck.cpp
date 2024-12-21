@@ -20,7 +20,7 @@ void alloc_cb(uv_handle_t* handle, size_t suggested_size, uv_buf_t* buf) {
 
 void read_cb(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf){
     if(nread > 0){
-        uv_read_stop(stream);
+        exit(0);
     } else {
         exit(-1);
     }
@@ -67,6 +67,8 @@ int main(int argc, char** argv){
 
     uv_thread_t thread1, thread2;
     uv_thread_create(&thread2, loop_thread, loop2->loop);
+    uv_thread_setpriority(thread2, UV_THREAD_PRIORITY_HIGHEST);
+    
     uv_thread_create(&thread1, loop_thread, loop1->loop);
 
     uv_thread_join(&thread1);

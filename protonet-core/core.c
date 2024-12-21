@@ -45,13 +45,8 @@ uv_interface_address_t getInterIP(char interface_name[]){
     for(int i = 0; i < count; i++){
         char ip[INET_ADDRSTRLEN];
         uv_interface_address_t inter = interfaces[i];
-
-        if(inter.is_internal){
-            continue;
-        }
-
-		uv_inet_ntop(AF_INET, &inter.address.address4.sin_addr, ip, INET_ADDRSTRLEN);
-		if(strcmp(inter.name, interface_name) == 0 && strcmp(ip, "0.0.0.0") != 0){
+		
+		if(strcmp(inter.name, interface_name) == 0){
 			return inter;
 		}
     }
