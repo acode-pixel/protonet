@@ -22,7 +22,9 @@ Server::Server(char* inter, char* serverName, char Dir[], char* peerIp, uv_loop_
 
 	int r = uv_tcp_bind(&server, (struct sockaddr*)&addr.address.address4, 0);
     if (r) {
-        log_error("Failed binding to Socket: %s:%d", this->IP, S_PORT);
+		delete this;
+        log_error("Failed binding to Socket due to error: [%s]", uv_err_name(r));
+		log_debug("Failed binding to Socket due to error: [%s]", uv_strerror(r));
         return;
     }
 
@@ -32,6 +34,8 @@ Server::Server(char* inter, char* serverName, char Dir[], char* peerIp, uv_loop_
 		memcpy(&this->client, client, sizeof(Client));
 		strcpy(this->IP, peerIp);
 	}
+
+	log_info("Successfully created Server");
 
 	return;
 }

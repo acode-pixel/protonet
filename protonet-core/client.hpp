@@ -8,7 +8,7 @@ extern "C" {
 
 class Client {
     public:
-        char name[12];
+        char name[INET_ADDRSTRLEN];
         uv_stream_t socket;
 	    int socketMode;
 	    tracItem trac;

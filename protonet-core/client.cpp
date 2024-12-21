@@ -8,12 +8,12 @@ Client::Client(char* inter, char name[], uv_loop_t* loop){
 	log_info("Client IP: %s", inet_ntoa(addr.address.address4.sin_addr));
 
 	if (name == NULL){
-		strcpy(this->name, (char*)(inet_ntoa(addr.address.address4.sin_addr)));
+		uv_ip4_name(&addr.address.address4, this->name, INET_ADDRSTRLEN);
 	} 
 	else {strcpy(this->name, name);}
 	log_info("Client name: %s", this->name);
 
-	if(this != NULL && this->name != NULL){
+	if(this->name != NULL){
 		log_info("Successfully created Client");
 		this->loop = loop;
 		return;
@@ -61,7 +61,7 @@ void Client::on_connect(uv_connect_t *req, int status){
 
 int Client::makeFileReq(char File[]){
 	if(strlen(File) > 255){
-		log_error("File name too long");
+		log_error("[File name too long]");
 		return -1;
 	}
 	struct BROD* br = (struct BROD*)malloc(sizeof(struct BROD) + strlen(File)+1);
@@ -82,7 +82,7 @@ void Client::on_write(uv_write_t* req, int status){
         log_info("Request sent!");
 		uv_read_start(req->handle, Client::alloc_buf, Client::read);
     } else {
-        log_error("Request failed.[%s]", strerror(errno));
+        log_error("Request failed.[%s]", uv_strerror(status));
      }
 }
 
@@ -92,7 +92,23 @@ void Client::alloc_buf(uv_handle_t *handle, size_t suggested_size, uv_buf_t *buf
 }
 
 void Client::read(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf){
-	
+	if (nread < 0){
+		log_error("Client failed to read due to error: [%s]", uv_err_name(nread));
+		log_debug("Client failed to read due to error: [%s]", uv_strerror(nread));
+		return;
+	}
+	Packet* pck = (Packet*)buf->base;
+	if (pck->Mode == SPTP_TRAC){
+		// ub;uvbhjnk. hbjljh
+	} else if(pck->Mode == SPTP_DATA){
+		// data go brrrrrrrrrrrrrrrr
+	} else if(pck->Mode == SPTP_BROD){
+		// a voice from the void
+	}
+
+	free(buf->base);
+
+
 }
 /*
 bool clientCheckSocket(Client* client){

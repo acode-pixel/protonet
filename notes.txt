@@ -52,9 +52,6 @@ args:
 ./a.out client [inter] [name|none] [ip] [file request]
 ./a.out serv [inter] [ip to connect to|none] [serv name] [dir] 
 
-challenges:
-	creating socket manager
-
 Socket Manager functions:
 	read over sockets
 	if server role:
