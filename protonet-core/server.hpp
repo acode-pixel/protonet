@@ -8,6 +8,8 @@ extern "C" {
 	#include "log.h"
 }
 #include "client.hpp"
+#include "vector"
+using namespace std; 
 
 typedef struct clientList {
 	Client* clients[MAX_CLIENTS];
@@ -24,17 +26,18 @@ class Server {
 	    int nConn;
 	    char IP[INET_ADDRSTRLEN];		/* host IP */
 	    char destIP[INET_ADDRSTRLEN];	/* Destination IP */
-	    //size_t size;		/* Server struct Size */
 	    char serverName[12];	/* Server Name */ 
-	    //serverOpts ServerOpts;	/* Server Options */
-	    //struct kevent Events[MAX_CLIENTS];
 	    Client* client;		/* for client-server hybrid */
-	    clientList Clientlist;
+	    vector<Client*> Clientlist;
 	    tracList Traclist;
 	    char dir[];	/* Server Dir */
 
 		MYLIB_API Server(char* inter, char* serverName, char Dir[], char* peerIp, uv_loop_t* loop);
 
+		private:
+			static void on_connection(uv_stream_t *server, int status);
+			static void pckParser(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf);
+			static void alloc_buf(uv_handle_t *handle, size_t suggested_size, uv_buf_t *buf);
 
 };
 /*

@@ -87,6 +87,11 @@ typedef struct Protonet {
 	void* Server; // Server var
 } Protonet;
 
+void proto_setClient(void* Client);
+void* proto_getClient();
+void proto_setServer(void* Server);
+void* proto_getServer();
+
 #ifdef DEBUG
 MYLIB_API uv_interface_address_t getInterIP(char interface_name[]);
 MYLIB_API int sendPck(/*int fd*/ uv_stream_t* stream_tcp, uv_write_cb write_cb, char* Name, uint8_t Mode, void* data, uint size);

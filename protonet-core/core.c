@@ -3,6 +3,19 @@
 FILE* flog;
 Protonet* _p;
 
+void proto_setClient(void* Client){
+	if(_p != NULL){ _p->Client = Client; };
+}
+void* proto_getClient(){
+	if(_p != NULL){return _p->Client; };
+}
+void proto_setServer(void* Server){
+	if(_p != NULL){ _p->Server = Server; };
+}
+void* proto_getServer(){
+	if(_p != NULL){return _p->Server; };
+}
+
 Protonet* Init(void){
 	// put logs to file
   	time_t t = time(NULL);

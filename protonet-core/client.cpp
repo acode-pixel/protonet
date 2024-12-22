@@ -16,6 +16,7 @@ Client::Client(char* inter, char name[], uv_loop_t* loop){
 	if(this->name != NULL){
 		log_info("Successfully created Client");
 		this->loop = loop;
+		proto_setClient(this);
 		return;
 	} else {
 		delete this;
@@ -53,7 +54,8 @@ void Client::on_connect(uv_connect_t *req, int status){
     if (status == 0) {
         // Handle successful connection
         log_info("Connected!");
-		memcpy(&client->socket, req->handle, sizeof(uv_tcp_t));
+		//memcpy(&client->socket, req->handle, sizeof(uv_tcp_t));
+		client->socket = req->handle;
     } else {
         log_error("Connection failed.[%s]", strerror(errno));
     }
@@ -69,7 +71,7 @@ int Client::makeFileReq(char File[]){
 	strcpy(br->fileReq, File);
 	strcpy(this->fileReq, File);
 	this->socketMode = 1;
-	sendPck(&this->socket, Client::on_write, this->name, 1, br, 0);
+	sendPck(this->socket, Client::on_write, this->name, 1, br, 0);
 	fillTracItem(&this->trac, 0, this->name, 0, 0, NULL, this->name);
 	free(br);
 	return 0;

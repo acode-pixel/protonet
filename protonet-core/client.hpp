@@ -9,7 +9,7 @@ extern "C" {
 class Client {
     public:
         char name[INET_ADDRSTRLEN];
-        uv_stream_t socket;
+        uv_stream_t* socket;
 	    int socketMode;
 	    tracItem trac;
 	    char fileReq[255];
