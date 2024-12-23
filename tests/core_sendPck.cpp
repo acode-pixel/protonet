@@ -46,6 +46,7 @@ void loop_thread(void* arg) {
         uv_ip4_addr("127.0.0.1", 5657, &addr);
         uv_tcp_init(loop1, &tcpHandle1);
         uv_tcp_connect(&req, &tcpHandle1, (struct sockaddr*)&addr, on_connect);
+        uv_run(static_cast<uv_loop_t*>(arg), UV_RUN_DEFAULT);
     } else if(strcmp((char*)(static_cast<uv_loop_t*>(arg)->data), "server") == 0){
         uv_loop_t* loop2 = (uv_loop_t*)arg;
 
@@ -54,9 +55,8 @@ void loop_thread(void* arg) {
         uv_tcp_bind(&Server, (struct sockaddr*)&addr, 0);
         uv_listen((uv_stream_t*)&Server, 10, on_connection);
         uv_thread_create(&thread1, loop_thread, loop1->loop);
+        uv_run(static_cast<uv_loop_t*>(arg), UV_RUN_DEFAULT);
     }
-
-    uv_run(static_cast<uv_loop_t*>(arg), UV_RUN_DEFAULT);
 }
 
 int main(int argc, char** argv){
