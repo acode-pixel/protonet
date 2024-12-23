@@ -77,6 +77,7 @@ int main(int argc, char** argv){
     uint64_t time = uv_hrtime();
     uv_cond_init(&cond1);
     uv_cond_init(&cond2);
+    uv_mutex_init(&mutex);
 
     uv_loop_set_data(loop1->loop, (void*)"client");
     uv_loop_set_data(loop2->loop, (void*)"server");
