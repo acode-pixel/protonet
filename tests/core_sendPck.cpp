@@ -24,11 +24,6 @@ void on_connect(uv_connect_t *req, int status){
         printf("Connection error: %s\n", uv_strerror(status));
     }
     sendPck(req->handle, write_cb, "bob", 1, (void*)"packet test", 0);
-    //uv_write_t write;
-    //char* base = "test";
-    //uv_buf_t pckbuf[1];
-    //pckbuf[0] = uv_buf_init(base, 4);
-    //uv_write(&write, req->handle, pckbuf, 1, write_cb);
 }
 
 void alloc_cb(uv_handle_t* handle, size_t suggested_size, uv_buf_t* buf) {
