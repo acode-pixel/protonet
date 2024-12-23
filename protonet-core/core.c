@@ -96,7 +96,7 @@ int sendPck(/*int fd*/ uv_stream_t* stream_tcp, uv_write_cb write_cb, char* Name
 	uv_write_t write;
 	// need callback from client or server
 	uv_write(&write, stream_tcp, pckbuf, 1, write_cb);
-	uv_run(_p->loop, UV_RUN_ONCE);
+	//uv_run(_p->loop, UV_RUN_ONCE);
 	/*free(pck);*/
 	return 0;
 }
