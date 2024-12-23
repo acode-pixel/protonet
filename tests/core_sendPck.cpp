@@ -23,13 +23,15 @@ void alloc_cb(uv_handle_t* handle, size_t suggested_size, uv_buf_t* buf) {
 }
 
 void read_cb(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf){
+    uv_mutex_lock(&mutex);
     if(nread > 0){
-        uv_mutex_lock(&mutex);
         uv_cond_signal(&cond2);
-        uv_mutex_unlock(&mutex);
-    } else {
+    } else if(nread < 0) {
+        printf("ERROR: %s", uv_strerror(nread));
         exit(-1);
     }
+    free(buf->base);
+    uv_mutex_unlock(&mutex);
 }
 
 void on_connection(uv_stream_t *server, int status){
@@ -48,18 +50,20 @@ void loop_thread(void* arg) {
         uv_connect_t req;
         uv_tcp_t tcpHandle1;
 
+        uv_mutex_lock(&mutex);
         uv_ip4_addr("127.0.0.1", 5657, &addr);
         uv_tcp_init(loop1, &tcpHandle1);
         uv_tcp_connect(&req, &tcpHandle1, (struct sockaddr*)&addr, on_connect);
+        uv_mutex_unlock(&mutex);
         uv_run(static_cast<uv_loop_t*>(arg), UV_RUN_DEFAULT);
     } else if(strcmp((char*)(static_cast<uv_loop_t*>(arg)->data), "server") == 0){
         uv_loop_t* loop2 = (uv_loop_t*)arg;
 
+        uv_mutex_lock(&mutex);
         uv_tcp_init(loop2, &Server);
         uv_ip4_addr("127.0.0.1", 5657, &addr);
         uv_tcp_bind(&Server, (struct sockaddr*)&addr, 0);
         uv_listen((uv_stream_t*)&Server, 10, on_connection);
-        uv_mutex_lock(&mutex);
         uv_cond_signal(&cond1);
         uv_mutex_unlock(&mutex);
         uv_run(static_cast<uv_loop_t*>(arg), UV_RUN_DEFAULT);
@@ -80,6 +84,7 @@ int main(int argc, char** argv){
     uv_thread_t thread2;
     uv_mutex_lock(&mutex);
     uv_thread_create(&thread2, loop_thread, loop2->loop);
+    uv_sleep(250);
     uv_cond_wait(&cond1, &mutex);
     uv_thread_create(&thread1, loop_thread, loop1->loop);
     uv_sleep(250);

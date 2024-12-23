@@ -22,7 +22,7 @@ test-linux-Release:
     - conan install . --build=libuv/1.49.2 -o libuv/*:shared=True
     - cmake --preset conan-release
     - cmake --build ./build/Release
-    - cd build/Release && ctest
+    - cd build/Release && ctest --output-on-failure
 
 
 test-linux-Debug:
