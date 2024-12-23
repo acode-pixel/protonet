@@ -8,6 +8,8 @@ extern "C" {
 }
 
 uv_tcp_t Server;
+Protonet* loop1;
+uv_thread_t thread1;
 
 void on_connect(uv_connect_t *req, int status){
     sendPck(req->handle, NULL, "bob", 1, (void*)"packet test", 0);
@@ -49,15 +51,16 @@ void loop_thread(void* arg) {
 
         uv_tcp_init(loop2, &Server);
         uv_ip4_addr("127.0.0.1", 5657, &addr);
-        uv_tcp_bind(&Server, (struct sockaddr*)&addr, NULL);
+        uv_tcp_bind(&Server, (struct sockaddr*)&addr, 0);
         uv_listen((uv_stream_t*)&Server, 10, on_connection);
+        uv_thread_create(&thread1, loop_thread, loop1->loop);
     }
 
     uv_run(static_cast<uv_loop_t*>(arg), UV_RUN_DEFAULT);
 }
 
 int main(int argc, char** argv){
-    Protonet* loop1 = Init();
+    loop1 = Init();
     Protonet* loop2 = Init();
 
     uint64_t time = uv_hrtime();
@@ -65,12 +68,7 @@ int main(int argc, char** argv){
     uv_loop_set_data(loop1->loop, (void*)"client");
     uv_loop_set_data(loop2->loop, (void*)"server");
 
-    uv_thread_t thread1, thread2;
+    uv_thread_t thread2;
     uv_thread_create(&thread2, loop_thread, loop2->loop);
-    uv_thread_setpriority(thread2, UV_THREAD_PRIORITY_HIGHEST);
-    
-    uv_thread_create(&thread1, loop_thread, loop1->loop);
-
-    uv_thread_join(&thread1);
     uv_thread_join(&thread2);
 }
