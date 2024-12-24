@@ -7,7 +7,7 @@ extern "C" {
     #include "core.h"
 }
 
-Protonet* loop1;
+
 uv_thread_t thread1;
 uv_async_t async;
 
@@ -35,7 +35,8 @@ void alloc_cb(uv_handle_t* handle, size_t suggested_size, uv_buf_t* buf) {
 
 void read_cb(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf){
     if(nread > 0){
-        exit(0);
+        printf("read bytes: %d\n", nread);
+        uv_stop(stream->loop);
     } else if(nread < 0) {
         printf("ERROR: %s", uv_strerror(nread));
         exit(-1);
@@ -71,24 +72,25 @@ void client_thread(void* arg){
     uv_loop_t* loop1 = (uv_loop_t*)arg;
 
     printf("Statrting thread [%s] %lu\n", (char*)(static_cast<uv_loop_t*>(arg)->data), uv_thread_self());
+    async.data = loop1;
     uv_async_init(loop1, &async, connectToServer);
     uv_run(static_cast<uv_loop_t*>(arg), UV_RUN_DEFAULT);
 }
 
-void sendSignal(uv_check_t* handle){
+void sendSignal(uv_prepare_t* handle){
     uv_async_send(&async);
-    uv_check_stop(handle);
+    uv_prepare_stop(handle);
 }
 
 void server_thread(void* arg) {
     sockaddr_in addr;
     printf("Statrting thread [%s] %lu\n", (char*)(static_cast<uv_loop_t*>(arg)->data), uv_thread_self());
     uv_loop_t* loop2 = (uv_loop_t*)arg;
-    uv_check_t check;
+    uv_prepare_t prep;
     uv_tcp_t Server;
 
-    uv_check_init(loop2, &check);
-    uv_check_start(&check, sendSignal);
+    uv_prepare_init(loop2, &prep);
+    uv_prepare_start(&prep, sendSignal);
     uv_tcp_init(loop2, &Server);
     uv_ip4_addr("127.0.0.1", 5657, &addr);
     uv_tcp_bind(&Server, (struct sockaddr*)&addr, 0);
@@ -97,7 +99,7 @@ void server_thread(void* arg) {
 }
 
 int main(int argc, char** argv){
-    loop1 = Init();
+    Protonet* loop1 = Init();
     Protonet* loop2 = Init();
 
     uint64_t time = uv_hrtime();
@@ -106,6 +108,8 @@ int main(int argc, char** argv){
     uv_loop_set_data(loop2->loop, (void*)"server");
 
     uv_thread_t thread2;
-    uv_thread_create(&thread1, server_thread, loop1->loop);
-    uv_thread_create(&thread2, client_thread, loop2->loop);
+    uv_thread_create(&thread1, client_thread, loop1->loop);
+    uv_sleep(1000);
+    uv_thread_create(&thread2, server_thread, loop2->loop);
+    uv_thread_join(&thread2);
 }
