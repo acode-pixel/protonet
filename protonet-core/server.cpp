@@ -95,7 +95,6 @@ void Server::write_cb(uv_write_t *req, int status){
 		break;
 	}
 
-	uv_read_start(req->handle, Server::alloc_buf, Server::pckParser);
 	free(req->data);
 	free(req);
 
@@ -122,11 +121,16 @@ void Server::pckParser(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf){
 		strcpy(filepath, server->dir);
 		strcat(filepath, pckData->fileReq);
 
-		if(access(filepath, R_OK | W_OK) == -1){
+		uv_fs_t req;
+		uv_fs_access(server->loop, &req, filepath, UV_FS_O_RDONLY, NULL);
+
+		if(req.result == -1){
+			uv_fs_req_cleanup(&req);
 			log_error("Server cant access file %s", filepath);
 			free(buf->base);
 			return;
 		}
+		uv_fs_req_cleanup(&req);
 
 		srand(time(0));
 		// create trac data
