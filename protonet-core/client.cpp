@@ -80,12 +80,31 @@ int Client::makeFileReq(char File[]){
 
 void Client::on_write(uv_write_t* req, int status){
 	Client* client = (Client*)(req->handle->data);
-    if (status == 0) {
-        log_info("Request sent!");
+
+	if(status < 0){
+		log_error("Sending packet failed.[%s]", uv_strerror(status));
+		free(req->data);
+	 	free(req);
+		return;
+	}
+
+	Packet* pck = (Packet*)req->data;
+
+	switch (pck->Mode)
+	{
+	case SPTP_BROD:
+		log_info("Request sent!");
 		uv_read_start(req->handle, Client::alloc_buf, Client::read);
-    } else {
-        log_error("Request failed.[%s]", uv_strerror(status));
-     }
+		client->socketMode = SPTP_BROD;
+		break;
+	
+	case SPTP_DATA:
+		struct DATA* data = (struct DATA*)pck->data;
+		log_info("Sending data with tracID: %d", data->tracID);
+		client->socketMode = SPTP_DATA;
+		break;
+	}
+
 	 free(req->data);
 	 free(req);
 }
@@ -107,7 +126,22 @@ void Client::read(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf){
 	}
 
 	Packet* pck = (Packet*)buf->base;
+	Client* client = (Client*)proto_getClient();
+
 	if (pck->Mode == SPTP_TRAC){
+		struct TRAC* pckdata = (struct TRAC*)pck->data;
+
+		if(strcmp(pckdata->Name, client->name) != 0 && proto_getServer() != NULL){
+			// WIP
+			free(buf->base);
+			return;
+		}
+
+		struct DATA* data = (struct DATA*)malloc(sizeof(struct DATA));
+		data->tracID = pckdata->tracID;
+		memcpy(data->data, "OK", 2);
+		sendPck(client->socket, Client::on_write, client->name, SPTP_DATA, data, sizeof(data));
+		free(data);
 		
 	} else if(pck->Mode == SPTP_DATA){
 		// data go brrrrrrrrrrrrrrrr
