@@ -52,9 +52,9 @@ typedef struct tracItem {
 	uint tracID; 		// transaction ID
 	uint8_t deleted;	// transaction is deleted
 	char fileRequester[12]; // Name of file requester
-	uint Socket; // Socket to file requester
+	uv_tcp_t* Socket; // Socket to file requester
 	uint socketStatus; // status of socket 
-	uint fd; // fd to requested file (if trac is confirmed)
+	uv_file* file; // fd to requested file (if trac is confirmed)
 	uint fileSize; // size of file requested
 	uint8_t hops; 		// hops between client and server from initial BROD packet
 	uint8_t lifetime; 	// calculated lifetime of packet from hops
@@ -74,14 +74,9 @@ typedef struct Packet {
 	uint8_t data[]; /* MAX 1024 */
 } Packet;
 
-typedef struct SocketOpt {
-	char reuseaddr;
-	char keepalive;
-	char dontroute;
-} SocketOpt;
-
 typedef struct Protonet {
 	bool isUp;
+	bool clientServerHybrid;
 	uv_loop_t* loop;
 	void* Client; // Client var
 	void* Server; // Server var

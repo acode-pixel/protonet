@@ -71,6 +71,80 @@ void Server::alloc_buf(uv_handle_t *handle, size_t suggested_size, uv_buf_t *buf
 	buf->len = suggested_size;
 }
 
+void Server::write_cb(uv_write_t *req, int status){
+	if(status < 0){
+		log_error("Server failed to write due to error: [%s]", uv_err_name(status));
+		log_debug("Server failed to write due to error: [%s]", uv_strerror(status));
+		free(req->data);
+		free(req);
+		return;
+	}
+
+	Packet* pck = (Packet*)req->data;
+
+	switch (pck->Mode)
+	{
+	case SPTP_BROD:
+		log_info("Server sent BROD packet");
+		break;
+	case SPTP_TRAC:
+		log_info("Server sent TRAC packet");
+		break;
+	case SPTP_DATA:
+		log_info("Server sent DATA packet");
+		break;
+	}
+
+	uv_read_start(req->handle, Server::alloc_buf, Server::pckParser);
+	free(req->data);
+	free(req);
+
+}
+
 void Server::pckParser(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf){
+	if (nread < 0){
+		log_error("Server failed to read due to error: [%s]", uv_err_name(nread));
+		log_debug("Server failed to read due to error: [%s]", uv_strerror(nread));
+		return;
+	} else if(nread == 0){
+		log_debug("Server read would block");
+		free(buf->base);
+		return;
+	}
+
+	Packet* pck = (Packet*)buf->base;
+	Server* server = (Server*)proto_getServer();
+
+	if(pck->Mode == SPTP_BROD){
+		log_debug("Server received BROD packet");
+		struct BROD* pckData = (struct BROD*)pck->data;
+		char filepath[strlen(server->dir)+strlen(pckData->fileReq)];
+		strcpy(filepath, server->dir);
+		strcat(filepath, pckData->fileReq);
+
+		if(access(filepath, R_OK | W_OK) == -1){
+			log_error("Server cant access file %s", filepath);
+			free(buf->base);
+			return;
+		}
+
+		srand(time(0));
+		// create trac data
+		struct TRAC* data = (TRAC*)malloc(sizeof(struct TRAC));
+		strcpy(data->Name, pck->Name);
+		data->tracID = rand();
+		data->lifetime = DEFAULT_TRAC_LIFETIME;
+		data->hops = pckData->hops;
+
+		// send to client lists
+
+		for(Client* client : server->Clientlist){
+			sendPck(client->socket, Server::write_cb, server->serverName, SPTP_TRAC, data, sizeof(data));
+		}
+
+		free(data);
+	}
+	free(buf->base);
+
 	return;
 }

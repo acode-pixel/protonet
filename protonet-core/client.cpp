@@ -1,6 +1,6 @@
 #include "client.hpp"
 
-Client::Client(char* inter, char name[], uv_loop_t* loop){
+Client:: Client(char* inter, char name[], uv_loop_t* loop){
 	log_add_callback(failCallback, NULL, 5);
 
 	uv_interface_address_t addr;
@@ -70,7 +70,7 @@ int Client::makeFileReq(char File[]){
 	br->hops = 0x01;
 	strcpy(br->fileReq, File);
 	strcpy(this->fileReq, File);
-	this->socketMode = 1;
+	this->socketMode = SPTP_BROD;
 	sendPck(this->socket, Client::on_write, this->name, 1, br, 0);
 	fillTracItem(&this->trac, 0, this->name, 0, 0, NULL, this->name);
 	free(br);
@@ -86,6 +86,8 @@ void Client::on_write(uv_write_t* req, int status){
     } else {
         log_error("Request failed.[%s]", uv_strerror(status));
      }
+	 free(req->data);
+	 free(req);
 }
 
 void Client::alloc_buf(uv_handle_t *handle, size_t suggested_size, uv_buf_t *buf){
@@ -98,14 +100,17 @@ void Client::read(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf){
 		log_error("Client failed to read due to error: [%s]", uv_err_name(nread));
 		log_debug("Client failed to read due to error: [%s]", uv_strerror(nread));
 		return;
+	} else if(nread == 0){
+		log_debug("Client read would block");
+		free(buf->base);
+		return;
 	}
+
 	Packet* pck = (Packet*)buf->base;
 	if (pck->Mode == SPTP_TRAC){
-		// ub;uvbhjnk. hbjljh
+		
 	} else if(pck->Mode == SPTP_DATA){
 		// data go brrrrrrrrrrrrrrrr
-	} else if(pck->Mode == SPTP_BROD){
-		// a voice from the void
 	}
 
 	free(buf->base);

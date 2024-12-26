@@ -3,6 +3,10 @@
 FILE* flog;
 Protonet* _p;
 
+struct serverThreadData {
+	uv_loop_t* loop;
+};
+
 void proto_setClient(void* Client){
 	if(_p != NULL){ _p->Client = Client; };
 }
@@ -42,6 +46,10 @@ Protonet* Init(void){
 	return _p;
 }
 
+int clientServerHybrid(char* ServerInterface, char* IP){
+	// WIP
+}
+
 uv_interface_address_t getInterIP(char interface_name[]){
 	/*struct ifreq ifr;
 	ifr.ifr_addr.sa_family = AF_INET;
@@ -67,7 +75,7 @@ uv_interface_address_t getInterIP(char interface_name[]){
 }
 
 int sendPck(/*int fd*/ uv_stream_t* stream_tcp, uv_write_cb write_cb, char* Name, uint8_t Mode, void* data, uint size){
-	Packet* pck = NULL;
+	Packet* pck = NULL; // free this
 	uint pckSize =  (size == 0) ? strlen(data) : size;
 	pck = (Packet*) malloc(sizeof(Packet) + pckSize+1);
 	memset(pck, 0, sizeof(Packet) + pckSize+1);
@@ -94,6 +102,7 @@ int sendPck(/*int fd*/ uv_stream_t* stream_tcp, uv_write_cb write_cb, char* Name
 	uv_buf_t pckbuf[1];
 	pckbuf[0] = uv_buf_init((char*)pck, sizeof(*pck) + pck->datalen);
 	uv_write_t* write = (uv_write_t*)malloc(sizeof(uv_write_t)); // free later
+	write->data = pck;
 	// need callback from client or server
 	uv_write(write, stream_tcp, pckbuf, 1, write_cb);
 	//uv_run(_p->loop, UV_RUN_ONCE);

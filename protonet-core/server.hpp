@@ -1,7 +1,7 @@
 #ifndef SERVER_H
 #define SERVER_H
 #define MAX_CLIENTS 10
-#define MAX_EVENTS 10
+#define DEFAULT_TRAC_LIFETIME 10
 
 extern "C" {
 	#include "core.h"
@@ -9,6 +9,7 @@ extern "C" {
 }
 #include "client.hpp"
 #include "vector"
+
 using namespace std; 
 
 typedef struct clientList {
@@ -38,6 +39,7 @@ class Server {
 			static void on_connection(uv_stream_t *server, int status);
 			static void pckParser(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf);
 			static void alloc_buf(uv_handle_t *handle, size_t suggested_size, uv_buf_t *buf);
+			static void write_cb(uv_write_t *req, int status);
 
 };
 /*
