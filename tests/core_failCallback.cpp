@@ -1,10 +1,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include "client.hpp"
+#include "core.h"
 
-extern "C" {
-    #include "core.h"
-}
 
 int main(int argc, char** argv){
     Protonet* protonet2 = Init();

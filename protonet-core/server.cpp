@@ -31,8 +31,8 @@ Server::Server(char* inter, char* serverName, char Dir[], char* peerIp, uv_loop_
 	uv_listen(&this->Socket, 10, on_connection);
 
 	if(strlen(peerIp) > 0){
-		Client* client = new Client(inter, serverName, loop);
-		client->connectToNetwork(peerIp);
+		Client* client = new Client(inter, serverName, peerIp);
+		//client->connectToNetwork(peerIp);
 		memcpy(&this->client, client, sizeof(Client));
 		strcpy(this->IP, peerIp);
 	}
@@ -130,7 +130,6 @@ void Server::pckParser(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf){
 			free(buf->base);
 			return;
 		}
-		uv_fs_req_cleanup(&req);
 
 		srand(time(0));
 		// create trac data

@@ -1,8 +1,8 @@
 #include "client.hpp"
 #include "client-wrapper.h"
 
-void* Client_new(char* inter, char name[], uv_loop_t* loop) {
-    return new Client(inter, name, loop);
+void* Client_new(char* inter, char name[], char* IP) {
+    return new Client(inter, name, IP);
 }
 
 void Client_delete(void* client) {

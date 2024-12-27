@@ -3,10 +3,6 @@
 FILE* flog;
 Protonet* _p;
 
-struct serverThreadData {
-	uv_loop_t* loop;
-};
-
 void proto_setClient(void* Client){
 	if(_p != NULL){ _p->Client = Client; };
 }

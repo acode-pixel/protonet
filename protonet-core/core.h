@@ -11,6 +11,10 @@
 #ifndef CORE_H
 #define CORE_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdint.h>
@@ -105,4 +109,9 @@ void failCallback(log_Event *ev);
 MYLIB_API Protonet* Init(void);
 MYLIB_API Protonet* Stop(void);
 #endif
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif

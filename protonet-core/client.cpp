@@ -1,6 +1,6 @@
 #include "client.hpp"
 
-Client:: Client(char* inter, char name[], uv_loop_t* loop){
+Client:: Client(char* inter, char name[], char* IP){
 	log_add_callback(failCallback, NULL, 5);
 
 	uv_interface_address_t addr;
@@ -14,10 +14,20 @@ Client:: Client(char* inter, char name[], uv_loop_t* loop){
 	log_info("Client name: %s", this->name);
 
 	if(this->name != NULL){
-		log_info("Successfully created Client");
+		uv_loop_t* loop = (uv_loop_t*)malloc(sizeof(uv_loop_t));
 		this->loop = loop;
 		proto_setClient(this);
+		int r = Client::connectToNetwork(IP);
+
+		if(r < 0){
+			delete this;
+			log_error("An error occured while creating Client.");
+		} else {
+			log_info("Successfully created Client");
+			uv_thread_create(&this->tid, Client::threadStart, this);
+		}
 		return;
+
 	} else {
 		delete this;
 		log_error("An error occured while creating Client.[%s]", strerror(errno));
@@ -25,28 +35,41 @@ Client:: Client(char* inter, char name[], uv_loop_t* loop){
 	}
 }
 
+
+void Client::threadStart(void* data){
+	Client* client = (Client*)data;
+	uv_run(client->loop, UV_RUN_DEFAULT);
+}
+
+
 Client::~Client(){
-	this->loop = nullptr;
 	if(uv_is_active((uv_handle_t*)&this->socket) != 0){
 		uv_close((uv_handle_t*)&this->socket, NULL);
 	}
+	uv_stop(this->loop);
+	free(this->loop);
 	return;
 }
 
-void Client::connectToNetwork(char* IP){
+int Client::connectToNetwork(char* IP){
     uv_connect_t connect_req;
-	uv_tcp_t tcpSocket; 
+	uv_tcp_t* tcpSocket = (uv_tcp_t*)malloc(sizeof(uv_tcp_t)); 
 
-	uv_tcp_init(this->loop, &tcpSocket);
+	uv_tcp_init(this->loop, tcpSocket);
 
 	struct sockaddr_in dest;
 
     uv_ip4_addr(IP, C_PORT, &dest);
 
-    tcpSocket.data = this;
+    tcpSocket->data = this;
 
-    uv_tcp_connect(&connect_req, &tcpSocket, (sockaddr*)&dest, Client::on_connect);
+    uv_tcp_connect(&connect_req, tcpSocket, (sockaddr*)&dest, Client::on_connect);
 	uv_run(this->loop, UV_RUN_ONCE);
+
+	if(this->socket != NULL){
+		return 0;
+	}
+	return -1; 
 }
 
 void Client::on_connect(uv_connect_t *req, int status){

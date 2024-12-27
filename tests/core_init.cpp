@@ -1,9 +1,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <uv.h>
-extern "C"{
-    #include "core.h"
-}
+#include "core.h"
+
 
 int main(int argc, char** argv){
     Protonet* protonet2 = Init();

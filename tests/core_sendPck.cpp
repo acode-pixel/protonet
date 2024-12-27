@@ -2,10 +2,8 @@
 #include <string.h>
 #include "client.hpp"
 #include <uv.h>
+#include "core.h"
 
-extern "C" {
-    #include "core.h"
-}
 
 
 uv_thread_t thread1;

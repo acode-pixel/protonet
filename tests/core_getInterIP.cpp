@@ -1,9 +1,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <uv.h>
-extern "C" {
-    #include "core.h"
-}
+#include "core.h"
 
 #ifdef __unix__
     #define INTER "lo0"
