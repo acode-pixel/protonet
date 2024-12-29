@@ -8,6 +8,7 @@
 stages:
   - test-linux-Release
   - test-linux-Debug
+  - windows
 
 test-linux-Release:
   stage: test-linux-Release
@@ -38,7 +39,21 @@ test-linux-Debug:
     - conan install . --build=libuv/1.49.2 -s build_type=Debug -o libuv/*:shared=False
     - cmake --preset conan-debug -DCMAKE_BUILD_TYPE=Debug
     - cmake --build ./build/Debug
-    - cd build/Debug && ctest
+    - cd build/Debug && ctest --output-on-failure
+
+windows:
+  stage: windows
+  tags: saas-windows-medium-amd64
+  image: gcc:latest
+  script:
+    - winget install python3 cmake pip3
+    - python3 -m venv .venv
+    - pip install conan
+    - conan profile detect --force
+    - conan install . --build=libuv/1.49.2 -o libuv/*:shared=True
+    - cmake --preset conan-release
+    - cmake --build .\build\Release
+    - cd build\Release && ctest --output-on-failure
 
 
 #sast:
