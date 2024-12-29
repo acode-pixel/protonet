@@ -81,7 +81,8 @@ typedef struct Packet {
 typedef struct Protonet {
 	bool isUp;
 	bool clientServerHybrid;
-	uv_loop_t* loop;
+	//uv_loop_t* loop;
+	uv_thread_t tid;
 	void* Client; // Client var
 	void* Server; // Server var
 } Protonet;
@@ -90,6 +91,7 @@ void proto_setClient(void* Client);
 void* proto_getClient();
 void proto_setServer(void* Server);
 void* proto_getServer();
+void NOP(uv_timer_t *handle);
 
 #ifdef DEBUG
 MYLIB_API uv_interface_address_t getInterIP(char interface_name[]);

@@ -10,6 +10,7 @@ class Client {
         uv_thread_t tid;
         char name[INET_ADDRSTRLEN];
         uv_stream_t* socket;
+        uv_timer_t pollTimeout;
 	    int socketMode;
 	    tracItem trac;
 	    char fileReq[255];

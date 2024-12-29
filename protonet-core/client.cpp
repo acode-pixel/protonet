@@ -12,19 +12,23 @@ Client:: Client(char* inter, char name[], char* IP){
 	} 
 	else {strcpy(this->name, name);}
 	log_info("Client name: %s", this->name);
+	this->tid = uv_thread_self();
 
 	if(this->name != NULL){
 		uv_loop_t* loop = (uv_loop_t*)malloc(sizeof(uv_loop_t));
+		uv_loop_init(loop);
 		this->loop = loop;
 		proto_setClient(this);
 		int r = Client::connectToNetwork(IP);
 
 		if(r < 0){
-			delete this;
 			log_error("An error occured while creating Client.");
 		} else {
+			uv_timer_init(this->loop, &this->pollTimeout);
+			uv_timer_start(&this->pollTimeout, NOP, 200, 200);
 			log_info("Successfully created Client");
 			uv_thread_create(&this->tid, Client::threadStart, this);
+			log_info("Started client thread: %lu", this->tid);
 		}
 		return;
 
@@ -54,6 +58,7 @@ Client::~Client(){
 int Client::connectToNetwork(char* IP){
     uv_connect_t connect_req;
 	uv_tcp_t* tcpSocket = (uv_tcp_t*)malloc(sizeof(uv_tcp_t)); 
+	//uv_tcp_t tcpSocket;
 
 	uv_tcp_init(this->loop, tcpSocket);
 
@@ -67,6 +72,7 @@ int Client::connectToNetwork(char* IP){
 	uv_run(this->loop, UV_RUN_ONCE);
 
 	if(this->socket != NULL){
+		log_info("Connected to %s", IP);
 		return 0;
 	}
 	return -1; 
@@ -76,11 +82,13 @@ void Client::on_connect(uv_connect_t *req, int status){
     Client* client = (Client*)(req->handle->data);
     if (status == 0) {
         // Handle successful connection
-        log_info("Connected!");
 		//memcpy(&client->socket, req->handle, sizeof(uv_tcp_t));
 		client->socket = req->handle;
+		uv_read_start(req->handle, Client::alloc_buf, Client::read);
     } else {
-        log_error("Connection failed.[%s]", strerror(errno));
+        log_error("Connection failed.[%s]", uv_err_name(status));
+		log_debug("Connection failed.[%s]", uv_strerror(status));
+		free(req->handle);
     }
 }
 
@@ -117,7 +125,6 @@ void Client::on_write(uv_write_t* req, int status){
 	{
 	case SPTP_BROD:
 		log_info("Request sent!");
-		uv_read_start(req->handle, Client::alloc_buf, Client::read);
 		client->socketMode = SPTP_BROD;
 		break;
 	

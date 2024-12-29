@@ -22,8 +22,10 @@ typedef struct tracList {
 
 class Server {
     public:
-	    uv_stream_t Socket;		/* Socket */
+	    uv_tcp_t* Socket;		/* Socket */
 		uv_loop_t* loop;
+		uv_thread_t tid;
+		uv_timer_t pollTimeout;
 	    int nConn;
 	    char IP[INET_ADDRSTRLEN];		/* host IP */
 	    char destIP[INET_ADDRSTRLEN];	/* Destination IP */
@@ -33,13 +35,14 @@ class Server {
 	    tracList Traclist;
 	    char dir[];	/* Server Dir */
 
-		MYLIB_API Server(char* inter, char* serverName, char Dir[], char* peerIp, uv_loop_t* loop);
+		MYLIB_API Server(char* inter, char* serverName, char Dir[], char* peerIp);
 
 		private:
 			static void on_connection(uv_stream_t *server, int status);
 			static void pckParser(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf);
 			static void alloc_buf(uv_handle_t *handle, size_t suggested_size, uv_buf_t *buf);
 			static void write_cb(uv_write_t *req, int status);
+			static void threadStart(void* data);
 
 };
 /*

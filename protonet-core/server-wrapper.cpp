@@ -1,8 +1,8 @@
 #include "server.hpp"
 #include "server-wrapper.h"
 
-void* Server_new(char* inter, char* serverName, char Dir[], char* peerIp, uv_loop_t* loop) {
-    return new Server(inter, serverName, Dir, peerIp, loop);
+void* Server_new(char* inter, char* serverName, char Dir[], char* peerIp) {
+    return new Server(inter, serverName, Dir, peerIp);
 }
 
 void Server_delete(void* server) {

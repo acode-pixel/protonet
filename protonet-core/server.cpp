@@ -1,15 +1,18 @@
 #include "server.hpp"
 
-Server::Server(char* inter, char* serverName, char Dir[], char* peerIp, uv_loop_t* loop){
+Server::Server(char* inter, char* serverName, char Dir[], char* peerIp){
 	if (access(Dir, R_OK) == -1){
 		log_error("Directory %s not accessible", Dir);
+		delete this;
+		return;
 	}
-	
-	// alloc server 
-	uv_tcp_init(loop, (uv_tcp_t*)&this->Socket);
-	this->loop = loop;
 
 	uv_interface_address_t addr = getInterIP(inter);
+
+	uv_loop_t* loop = (uv_loop_t*)malloc(sizeof(uv_loop_t));
+	uv_loop_init(loop);
+	
+	this->loop = loop;
 
 	uv_ip4_name(&addr.address.address4, this->IP, INET_ADDRSTRLEN); // src IP
 	uv_ip4_addr(this->IP, S_PORT, &addr.address.address4);
@@ -20,15 +23,17 @@ Server::Server(char* inter, char* serverName, char Dir[], char* peerIp, uv_loop_
 	memcpy(this->dir, Dir, strlen(Dir));
 	log_info("Server dir: %s", this->dir);
 
-	int r = uv_tcp_bind((uv_tcp_t*)&this->Socket, (struct sockaddr*)&addr.address.address4, 0);
-    if (r) {
-		delete this;
-        log_error("Failed binding to Socket due to error: [%s]", uv_err_name(r));
-		log_debug("Failed binding to Socket due to error: [%s]", uv_strerror(r));
-        return;
-    }
+	this->Socket = (uv_tcp_t*)malloc(sizeof(uv_tcp_t));
+	uv_tcp_init(loop, this->Socket);
+	uv_tcp_bind(this->Socket, (struct sockaddr*)&addr.address.address4, 0);
 
-	uv_listen(&this->Socket, 10, on_connection);
+	int r = uv_listen((uv_stream_t*)this->Socket, 10, on_connection);
+	if(r != 0){
+		log_error("Server failed to listen on port %d.[%s]", S_PORT, uv_err_name(r));
+		log_debug("Server failed to listen on port %d.[%s]", S_PORT, uv_strerror(r));
+		delete this;
+		return;
+	}
 
 	if(strlen(peerIp) > 0){
 		Client* client = new Client(inter, serverName, peerIp);
@@ -37,10 +42,20 @@ Server::Server(char* inter, char* serverName, char Dir[], char* peerIp, uv_loop_
 		strcpy(this->IP, peerIp);
 	}
 
+	uv_timer_init(this->loop, &this->pollTimeout);
+	uv_timer_start(&this->pollTimeout, NOP, 200, 200);
+	uv_thread_create(&this->tid, Server::threadStart, this);
+
 	log_info("Successfully created Server");
+	log_info("Started server thread: %lu", this->tid);
 	proto_setServer(this);
 
 	return;
+}
+
+void Server::threadStart(void* data){
+	Server* server = (Server*)data;
+	uv_run(server->loop, UV_RUN_DEFAULT);
 }
 
 void Server::on_connection(uv_stream_t *stream, int status){

@@ -7,7 +7,7 @@ extern "C" {
 #else
     #include <uv.h>
 #endif
-void* Server_new(char* inter, char* serverName, char Dir[], char* peerIp, uv_loop_t* loop);           // Create a new MyClass object
+void* Server_new(char* inter, char* serverName, char Dir[], char* peerIp);           // Create a new MyClass object
 void Server_delete(void* server); // Call printMessage method
 
 #ifdef __cplusplus

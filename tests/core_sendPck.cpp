@@ -97,17 +97,18 @@ void server_thread(void* arg) {
 }
 
 int main(int argc, char** argv){
-    Protonet* loop1 = Init();
-    Protonet* loop2 = Init();
+    uv_loop_t loop1, loop2;
+    uv_loop_init(&loop1);
+    uv_loop_init(&loop2);
 
     uint64_t time = uv_hrtime();
 
-    uv_loop_set_data(loop1->loop, (void*)"client");
-    uv_loop_set_data(loop2->loop, (void*)"server");
+    uv_loop_set_data(&loop1, (void*)"client");
+    uv_loop_set_data(&loop2, (void*)"server");
 
     uv_thread_t thread2;
-    uv_thread_create(&thread1, client_thread, loop1->loop);
+    uv_thread_create(&thread1, client_thread, &loop1);
     uv_sleep(1000);
-    uv_thread_create(&thread2, server_thread, loop2->loop);
+    uv_thread_create(&thread2, server_thread, &loop2);
     uv_thread_join(&thread2);
 }

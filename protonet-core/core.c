@@ -3,6 +3,10 @@
 FILE* flog;
 Protonet* _p;
 
+void NOP(uv_timer_t *handle){
+	return;
+}
+
 void proto_setClient(void* Client){
 	if(_p != NULL){ _p->Client = Client; };
 }
@@ -35,10 +39,11 @@ Protonet* Init(void){
 	log_info("Started at %d:%02d:%02d_%02d:%02d:%02d", tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
 	_p = malloc(sizeof(Protonet));
 	_p->isUp = true;
-	_p->loop = malloc(sizeof(uv_loop_t));
+	//_p->loop = malloc(sizeof(uv_loop_t));
 	_p->Client = NULL;
 	_p->Server = NULL;
-	uv_loop_init(_p->loop);
+	//uv_loop_init(_p->loop);
+	_p->tid = uv_thread_self();
 	return _p;
 }
 
