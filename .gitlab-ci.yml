@@ -43,7 +43,8 @@ test-linux-Debug:
 
 windows:
   stage: windows
-  tags: saas-windows-medium-amd64
+  tags: 
+    - saas-windows-medium-amd64
   image: gcc:latest
   script:
     - winget install python3 cmake pip3
