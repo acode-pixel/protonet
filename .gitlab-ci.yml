@@ -54,7 +54,8 @@ windows:
     - conan install . --build=libuv/1.49.2 -o libuv/*:shared=True
     - cmake --preset conan-release
     - cmake --build .\build\Release
-    - cd build\Release && ctest --output-on-failure
+    - cd build\Release 
+    - ctest --output-on-failure
 
 
 #sast:
