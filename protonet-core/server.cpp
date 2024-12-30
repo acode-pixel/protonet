@@ -100,13 +100,13 @@ void Server::write_cb(uv_write_t *req, int status){
 	switch (pck->Mode)
 	{
 	case SPTP_BROD:
-		log_info("Server sent BROD packet");
+		log_debug("Server sent BROD packet");
 		break;
 	case SPTP_TRAC:
-		log_info("Server sent TRAC packet");
+		log_debug("Server sent TRAC packet");
 		break;
 	case SPTP_DATA:
-		log_info("Server sent DATA packet");
+		log_debug("Server sent DATA packet");
 		break;
 	}
 
@@ -139,9 +139,10 @@ void Server::pckParser(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf){
 		uv_fs_t req;
 		uv_fs_access(server->loop, &req, filepath, UV_FS_O_RDONLY, NULL);
 
-		if(req.result == -1){
+		if(req.result < 0){
 			uv_fs_req_cleanup(&req);
-			log_error("Server cant access file %s", filepath);
+			log_error("Server cant access file %s due to error: [%s]", filepath, uv_err_name(req.result));
+			log_debug("Server cant access file %s due to error: [%s]", filepath, uv_strerror(req.result));
 			free(buf->base);
 			return;
 		}

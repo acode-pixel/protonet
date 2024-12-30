@@ -4,7 +4,7 @@ project("tests" C)
 set(core_functions init)
 add_executable(core_test_init core_init.cpp)
 
-set(client_functions connectToNetwork)
+set(client_functions connectToNetwork makeFileReq)
 
 if(WIN32)
     set(DLL_PATH "${CMAKE_BINARY_DIR}/protonet-core/libproto.dll")
