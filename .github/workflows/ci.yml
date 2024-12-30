@@ -34,7 +34,7 @@ jobs:
           cmake --build ./build/Release
 
       - name: Run tests
-        run: cd build/Release && ctest
+        run: cd build/Release && ctest --output-on-failure
 
   test-linux-Debug:
     runs-on: ubuntu-latest
