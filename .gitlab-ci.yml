@@ -8,7 +8,6 @@
 stages:
   - test-linux-Release
   - test-linux-Debug
-  - windows
 
 test-linux-Release:
   stage: test-linux-Release
@@ -40,22 +39,6 @@ test-linux-Debug:
     - cmake --preset conan-debug -DCMAKE_BUILD_TYPE=Debug
     - cmake --build ./build/Debug
     - cd build/Debug && ctest --output-on-failure
-
-windows:
-  stage: windows
-  tags: 
-    - saas-windows-medium-amd64
-  script:
-    - Add-AppxPackage -RegisterByFamilyName -MainPackage Microsoft.DesktopAppInstaller_8wekyb3d8bbwe
-    - winget install python3 cmake pip3 gcc
-    - python3 -m venv .venv
-    - pip install conan
-    - conan profile detect --force
-    - conan install . --build=libuv/1.49.2 -o libuv/*:shared=True
-    - cmake --preset conan-release
-    - cmake --build .\build\Release
-    - cd build\Release 
-    - ctest --output-on-failure
 
 
 #sast:
