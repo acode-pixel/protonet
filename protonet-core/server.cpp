@@ -21,6 +21,8 @@ Server::Server(char* inter, char* serverName, char Dir[], char* peerIp){
 	strcpy(this->serverName, serverName);
 	log_info("Server name: %s", this->serverName);
 	memcpy(this->dir, Dir, strlen(Dir));
+	if (strcmp("/", &this->dir[strlen(this->dir)]) != 0)
+		strcat(this->dir, "/");
 	log_info("Server dir: %s", this->dir);
 
 	this->Socket = (uv_tcp_t*)malloc(sizeof(uv_tcp_t));
@@ -132,9 +134,10 @@ void Server::pckParser(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf){
 	if(pck->Mode == SPTP_BROD){
 		log_debug("Server received BROD packet");
 		struct BROD* pckData = (struct BROD*)pck->data;
-		char filepath[strlen(server->dir)+strlen(pckData->fileReq)];
-		strcpy(filepath, server->dir);
-		strcat(filepath, pckData->fileReq);
+		char filepath[strlen(server->dir)+strlen(pckData->fileReq)+1];
+		memset(filepath, 0, sizeof(filepath));
+		memcpy(filepath, server->dir, strlen(server->dir));
+		memcpy(&filepath[strlen(server->dir)], pckData->fileReq, strlen(pckData->fileReq));
 
 		uv_fs_t req;
 		uv_fs_access(server->loop, &req, filepath, UV_FS_O_RDONLY, NULL);
