@@ -45,9 +45,16 @@ windows:
   stage: windows
   tags: 
     - saas-windows-medium-amd64
-  image: gcc:latest
   script:
-    - winget install python3 cmake pip3
+    - $URL = "https://api.github.com/repos/microsoft/winget-cli/releases/latest"
+    - $URL = (Invoke-WebRequest -Uri $URL).Content | ConvertFrom-Json |
+        Select-Object -ExpandProperty "assets" |
+        Where-Object "browser_download_url" -Match '.msixbundle' |
+        Select-Object -ExpandProperty "browser_download_url"
+    - Invoke-WebRequest -Uri $URL -OutFile "Setup.msix" -UseBasicParsing
+    - Add-AppxPackage -Path "Setup.msix"
+    - Remove-Item "Setup.msix"
+    - winget install python3 cmake pip3 gcc
     - python3 -m venv .venv
     - pip install conan
     - conan profile detect --force
