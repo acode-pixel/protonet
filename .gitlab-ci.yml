@@ -38,7 +38,7 @@ test-linux-Debug:
     - conan install . --build=libuv/1.49.2 -s build_type=Debug -o libuv/*:shared=False
     - cmake --preset conan-debug -DCMAKE_BUILD_TYPE=Debug
     - cmake --build ./build/Debug
-    - cd build/Debug && ctest
+    - cd build/Debug && ctest --output-on-failure
 
 
 #sast:
