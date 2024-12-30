@@ -20,6 +20,7 @@ Server::Server(char* inter, char* serverName, char Dir[], char* peerIp){
 	log_info("Server IP: %s", this->IP);
 	strcpy(this->serverName, serverName);
 	log_info("Server name: %s", this->serverName);
+	memset(this->dir, 0, strlen(Dir)+1);
 	memcpy(this->dir, Dir, strlen(Dir));
 	if (strcmp("/", &this->dir[strlen(this->dir)]) != 0)
 		strcat(this->dir, "/");
