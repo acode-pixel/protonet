@@ -7,6 +7,8 @@ Server::Server(char* inter, char* serverName, char Dir[], char* peerIp){
 		return;
 	}
 
+	memset(this, 0, sizeof(Server));
+
 	uv_interface_address_t addr = getInterIP(inter);
 
 	uv_loop_t* loop = (uv_loop_t*)malloc(sizeof(uv_loop_t));

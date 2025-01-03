@@ -52,9 +52,13 @@ foreach(i IN LISTS client_functions)
     add_test(NAME LIBPROTO_client_${i} COMMAND client_test_${i})
 endforeach()
 
+if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+    list(APPEND core_functions failCallback getInterIP sendPck)
+endif()
+
 foreach(i IN LISTS core_functions)
     add_executable(core_test_${i} core_${i}.cpp)
-    target_link_libraries(core_test_${i} ${LIB_PATH})
+    target_link_libraries(core_test_${i} ${LIB_PATH} uv)
     target_include_directories(core_test_${i} PUBLIC "../protonet-core/")
 
     if(WIN32)
@@ -64,7 +68,7 @@ foreach(i IN LISTS core_functions)
         endif()
     endif()
 
-    if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+    if(CMAKE_BUILD_TYPE STREQUAL "Debug") 
         target_compile_definitions(core_test_${i} PUBLIC DEBUG)
     endif()
 

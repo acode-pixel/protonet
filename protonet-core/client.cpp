@@ -3,6 +3,8 @@
 Client:: Client(char* inter, char name[], char* IP){
 	log_add_callback(failCallback, NULL, 5);
 
+	memset(this, 0, sizeof(Client));
+
 	uv_interface_address_t addr;
 	addr = getInterIP(inter);
 	log_info("Client IP: %s", inet_ntoa(addr.address.address4.sin_addr));
