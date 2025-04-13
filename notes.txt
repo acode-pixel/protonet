@@ -1,12 +1,9 @@
 TODO:
 	create client module (handles broadcasting/re-broadcasting messages through the network, client side functions)
 	create server modue (handles serving files and general sendig of files)
-	create core (see notes for functions)
-	turn client & server files to cpp
 	
 
 notes:
-	use epoll to run caller without stopping program
 
 	uses Port: 5657
 	how transfering files work:
@@ -24,8 +21,7 @@ notes:
 		END OF OPERATION
 
 	core:
-		handles and manages transaction IDs that a computer has
-		handles the packet creation and packet content
+		Handles protonet instance (backbone of api)
 
 packet Format:
 	0 - 3: SPTP
@@ -48,15 +44,9 @@ Socket Modes:
 	DATA - Socket is used for DATA packets
 	NONE - Socket is not used at all
 
-args:
-./a.out client [inter] [name|none] [ip] [file request]
-./a.out serv [inter] [ip to connect to|none] [serv name] [dir] 
-
-Socket Manager functions:
-	read over sockets
-	if server role:
+Socket behaviours:
+	Server:
 		add any new clients that is requesting for a file to a Clients list with associated socket mode
-		iterate over clients and do associated modes form said clients
 
 		if BROD:
 			Check if file is available on the server folder
@@ -69,61 +59,35 @@ Socket Manager functions:
 		if BROD with EOP:
 			send an BROD.OK message to client
 			remove client from client list
-
-				
-
-Note:
-	make a side client function to see if a file is available on the network using BROD (make brodSpread)
-	refine server loop for handling multiple packets in one fd	
-
-
-Server runtime loop:
-	listen for any new connections (update Server.nConn)
-	add any new sockets to a socket list
-	check the socket list if a socket has data to be read (using epoll or kqueue)
-	use Socket manager to manage socket operations for each socket (if any)
-	print Sockets fds and their modes that are connected to the host
-
-Client runtime for client role:
-	send a BROD packet to server
-	wait for server response (resend if server doesn't respond within 32 iterations of the runtime)
-	loop:
-		if socket has no data to read
-			leave
-		read socket
-		if response is TRAC:
-			if client tracItem exists and respone hops are larger:
+	Client:
+		send a BROD packet to server
+		wait for server response (resend if server doesn't respond within 32 iterations of the runtime)
+		loop:
+			if socket has no data to read
 				leave
-			move TRAC packet to client tracItem with confirmed bit;
-		if response BROD.NO_FILE with tracID:
-			send BROD.LEAVE packet with tracID
-			set tracItem's canDelete bit
-		if response is BROD.LEAVE_OK with tracID:
-			if tracItem's canDelete bit is set:
-				delete client tracItem
-				exit loop
-	close socket
-
-Data Manager:
-	manages opening and updating fds for tracItems
-	handles sending of data to client
-	
-
-
-
-
+			read socket
+			if response is TRAC:
+				if client tracItem exists and respone hops are larger:
+					leave
+				move TRAC packet to client tracItem with confirmed bit;
+			if response BROD.NO_FILE with tracID:
+				send BROD.LEAVE packet with tracID
+				set tracItem's canDelete bit
+			if response is BROD.LEAVE_OK with tracID:
+				if tracItem's canDelete bit is set:
+					delete client tracItem
+					exit loop
+		close socket
 
 Maximum file size for transfer is 1024 MB
 	
-
 files:
-	client.c:
-		CL_Init(char* inter, char name[]);
-		connectToNetwork(char* IP, Client* cli);
-		makeFileReq(int fd, char* IP, char File[]);
-	server.c:
-		Init(char* inter, char* ip, char* serverName, char Dir[]);
-		delClient(int fd, Server* serv);
-		add_Client(int fd, Server* serv);
-		checkSockets(Serv* serv);
-		ServerListen(Server* serv);
+	core.c:
+		Init();
+		Stop();
+	client.cpp:
+		Client::Client(char* inter, char name[]);
+		Client::connectToNetwork(char* IP);
+		Client::makeFileReq(char File[]);
+	server.cpp:
+		Server::Server(char* inter, char* ip, char* serverName, char Dir[]);
