@@ -158,8 +158,16 @@ void Server::pckParser(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf){
 		struct TRAC* data = (TRAC*)malloc(sizeof(struct TRAC));
 		strcpy(data->Name, pck->Name);
 		data->tracID = rand();
-		data->lifetime = DEFAULT_TRAC_LIFETIME;
+		data->lifetime = pckData->hops;
 		data->hops = pckData->hops;
+
+		tracItem* trac = (tracItem*)malloc(sizeof(tracItem));
+		trac->tracID = data->tracID;
+		trac->lifetime = data->lifetime;
+		trac->socketStatus = SPTP_TRAC;
+		strcpy(trac->fileRequester, data->Name);
+		strcpy(trac->fileReq, filepath);
+		server->Traclist.push_back(trac);
 
 		// send to client lists
 
@@ -168,6 +176,19 @@ void Server::pckParser(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf){
 		}
 
 		free(data);
+	} else if(pck->Mode == SPTP_DATA){
+		//  make a func that schedule the sending of file data client requested
+		struct DATA* data = (struct DATA*)pck->data;
+		for (tracItem* trac : server->Traclist){
+			if(strcmp(pck->Name, trac->fileRequester) == 0 && data->tracID == trac->tracID){
+				if(strcmp((char*)data->data, "OK") == 0){
+					trac->confirmed = true;
+					trac->Socket = (uv_tcp_t*)stream;
+					trac->socketStatus = SPTP_DATA;
+					break;
+				}
+			}
+		}
 	}
 	free(buf->base);
 

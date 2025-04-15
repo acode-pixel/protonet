@@ -50,7 +50,7 @@ struct TRAC {
 	uint tracID;
 	uint8_t hops;
 	uint8_t lifetime;
-	char Name[12];
+	char Name[12]; // Name of the file requester
 };
 
 typedef struct tracItem {

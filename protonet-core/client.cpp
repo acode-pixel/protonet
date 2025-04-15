@@ -163,12 +163,15 @@ void Client::read(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf){
 	if (pck->Mode == SPTP_TRAC){
 		struct TRAC* pckdata = (struct TRAC*)pck->data;
 
-		if(strcmp(pckdata->Name, client->name) != 0 && proto_getServer() != NULL){
-			// WIP
+		if(strcmp(pckdata->Name, client->name) != 0){
+			if(proto_getServer() != NULL){
+				// WIP (when it isnt for us but we can send it to someone else)
+			}
 			free(buf->base);
 			return;
 		}
 
+		// when packet is intended for us
 		struct DATA* data = (struct DATA*)malloc(sizeof(struct DATA));
 		data->tracID = pckdata->tracID;
 		memcpy(data->data, "OK", 2);

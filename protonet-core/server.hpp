@@ -32,7 +32,7 @@ class Server {
 	    char serverName[12];	/* Server Name */ 
 	    Client* client;		/* for client-server hybrid */
 	    vector<Client*> Clientlist;
-	    tracList Traclist;
+	    vector<tracItem*> Traclist;
 	    char dir[];	/* Server Dir */
 
 		MYLIB_API Server(char* inter, char* serverName, char Dir[], char* peerIp);
