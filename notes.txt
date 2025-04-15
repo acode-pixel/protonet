@@ -4,6 +4,7 @@ TODO:
 	
 
 notes:
+use MingW when compiling on windows
 
 	uses Port: 5657
 	how transfering files work:
