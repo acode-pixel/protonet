@@ -68,11 +68,11 @@ uv_interface_address_t getInterIP(char interface_name[]){
         char ip[INET_ADDRSTRLEN];
         uv_interface_address_t inter = interfaces[i];
 		if(strcmp(inter.name, interface_name) == 0){
-			free(inter.name);
+			//free(inter.name);
 			free(interfaces);
 			return inter;
 		}
-		free(inter.name);
+		//free(inter.name);
     } 
 	free(interfaces);
 	return (uv_interface_address_t){NULL};
