@@ -103,9 +103,12 @@ int Client::makeFileReq(char File[]){
 	br->hops = 0x01;
 	strcpy(br->fileReq, File);
 	strcpy(this->fileReq, File);
-	this->socketMode = SPTP_BROD;
+	//this->socketMode = SPTP_BROD;
 	sendPck(this->socket, Client::on_write, this->name, 1, br, 0);
-	fillTracItem(&this->trac, 0, this->name, 0, 0, NULL, this->name);
+	strcpy(this->trac.fileRequester, this->name);
+	strcpy(this->trac.fileReq, this->fileReq);
+
+	//fillTracItem(&this->trac, 0, this->name, 0, 0, NULL, this->name);
 	free(br);
 	return 0;
 
@@ -174,12 +177,17 @@ void Client::read(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf){
 		// when packet is intended for us
 		struct DATA* data = (struct DATA*)malloc(sizeof(struct DATA));
 		data->tracID = pckdata->tracID;
+		client->trac.confirmed = true;
+		client->trac.hops = pckdata->hops;
+		client->trac.Socket = (uv_tcp_t*)stream;
+		client->trac.fileSize = pckdata->fileSize;
 		memcpy(data->data, "OK", 2);
 		sendPck(client->socket, Client::on_write, client->name, SPTP_DATA, data, sizeof(data));
 		free(data);
 		
 	} else if(pck->Mode == SPTP_DATA){
 		// data go brrrrrrrrrrrrrrrr
+
 	}
 
 	free(buf->base);

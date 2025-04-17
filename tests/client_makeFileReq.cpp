@@ -10,16 +10,16 @@ int main(int argc, char** argv){
     Client* client;
 
     #ifdef _WIN32
-        server = new Server("Loopback Pseudo-Interface 1", "test", ".", "");
+        server = new Server("Loopback Pseudo-Interface 1", "server", ".", "");
         uv_sleep(1000);
-        client = new Client("Loopback Pseudo-Interface 1", "test", "127.0.0.1");
+        client = new Client("Loopback Pseudo-Interface 1", "client", "127.0.0.1");
     #else
-        server = new Server("lo", "test", ".", "");
+        server = new Server("lo", "server", ".", "");
         uv_sleep(1000);
-        client = new Client("lo", "test", "127.0.0.1");
+        client = new Client("lo", "client", "127.0.0.1");
     #endif
 
-    client->makeFileReq("test.txt");
+    client->makeFileReq("fake.txt");
     uv_sleep(2000);
     if(client->socketMode != SPTP_BROD)
         return -1;

@@ -1,13 +1,8 @@
 #include "server.hpp"
 
 Server::Server(char* inter, char* serverName, char Dir[], char* peerIp){
-	if (access(Dir, R_OK) == -1){
-		log_error("Directory %s not accessible", Dir);
-		delete this;
-		return;
-	}
 
-	memset(this, 0, sizeof(Server));
+	//memset(this, 0, sizeof(Server));
 
 	uv_interface_address_t addr = getInterIP(inter);
 
@@ -49,7 +44,20 @@ Server::Server(char* inter, char* serverName, char Dir[], char* peerIp){
 
 	uv_timer_init(this->loop, &this->pollTimeout);
 	uv_timer_start(&this->pollTimeout, NOP, 200, 200);
+
+	uv_fs_t req;
+	uv_fs_access(this->loop, &req, Dir, UV_FS_O_RDONLY, NULL);
+	if (req.result < 0){
+		log_error("Directory %s not accessible", Dir);
+		delete this;
+		return;
+	}
+	uv_fs_req_cleanup(&req);
+
 	uv_thread_create(&this->tid, Server::threadStart, this);
+
+	uv_check_init(this->loop, &this->tracChecker);
+	uv_check_start(&this->tracChecker, Server::tracCheck);
 
 	log_info("Successfully created Server");
 	log_info("Started server thread: %lu", this->tid);
@@ -141,7 +149,6 @@ void Server::pckParser(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf){
 		memset(filepath, 0, sizeof(filepath));
 		memcpy(filepath, server->dir, strlen(server->dir));
 		memcpy(&filepath[strlen(server->dir)], pckData->fileReq, strlen(pckData->fileReq));
-
 		uv_fs_t req;
 		uv_fs_access(server->loop, &req, filepath, UV_FS_O_RDONLY, NULL);
 
@@ -154,17 +161,23 @@ void Server::pckParser(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf){
 		}
 
 		srand(time(0));
+		uv_fs_req_cleanup(&req);
+		uv_fs_stat(server->loop, &req, filepath, NULL);
+
 		// create trac data
 		struct TRAC* data = (TRAC*)malloc(sizeof(struct TRAC));
+		memset(data, 0, sizeof(struct TRAC));
 		strcpy(data->Name, pck->Name);
 		data->tracID = rand();
 		data->lifetime = pckData->hops;
 		data->hops = pckData->hops;
+		data->fileSize = req.statbuf.st_size;
 
 		tracItem* trac = (tracItem*)malloc(sizeof(tracItem));
 		trac->tracID = data->tracID;
 		trac->lifetime = data->lifetime;
 		trac->socketStatus = SPTP_TRAC;
+		trac->fileSize = data->fileSize;
 		strcpy(trac->fileRequester, data->Name);
 		strcpy(trac->fileReq, filepath);
 		server->Traclist.push_back(trac);
@@ -172,10 +185,12 @@ void Server::pckParser(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf){
 		// send to client lists
 
 		for(Client* client : server->Clientlist){
-			sendPck(client->socket, Server::write_cb, server->serverName, SPTP_TRAC, data, sizeof(data));
+			sendPck(client->socket, Server::write_cb, server->serverName, SPTP_TRAC, data, sizeof(struct TRAC));
 		}
 
 		free(data);
+		uv_fs_req_cleanup(&req);
+
 	} else if(pck->Mode == SPTP_DATA){
 		//  make a func that schedule the sending of file data client requested
 		struct DATA* data = (struct DATA*)pck->data;
@@ -193,4 +208,58 @@ void Server::pckParser(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf){
 	free(buf->base);
 
 	return;
+}
+
+void Server::tracCheck(uv_check_t *handle){
+	Server* serv = (Server*)proto_getServer();
+	if(serv->Traclist.size() != 0){
+		for(tracItem* trac : serv->Traclist){
+
+			if(!trac->confirmed){
+				continue;
+			} else if(trac->canDelete){
+				memset(trac, 0, sizeof(tracItem));
+				continue;
+			}
+
+			uv_fs_t req;
+
+			if(trac->file == 0){
+				uv_fs_open(serv->loop, &req, trac->fileReq, O_RDONLY, 0, NULL);
+				if(req.result < 0){
+					log_error("Server failed to open requested file %s.[%s]", trac->fileReq, uv_err_name(req.result));
+					log_debug("Server failed to open requested file %s.[%s]", trac->fileReq, uv_strerror(req.result));
+					uv_fs_req_cleanup(&req);
+					continue;
+				} 
+				
+				trac->file = req.result;
+				uv_fs_req_cleanup(&req);
+			}
+
+			struct DATA* data = (struct DATA*)malloc(sizeof(struct DATA));
+			memset(data, 0, 65512);
+			data->tracID = trac->tracID;
+			uv_buf_t buff = uv_buf_init((char*)data->data, 65508);
+			uv_fs_read(serv->loop, &req, trac->file, &buff, 1, trac->fileOffset, NULL);
+			//int r = read(trac->file, buff, 65512);
+
+			if(req.result < 0){
+				log_error("Server failed to read requested file %s.[%s]", trac->fileReq, uv_err_name(req.result));
+				log_debug("Server failed to read requested file %s.[%s]", trac->fileReq, uv_strerror(req.result));
+			} else if(req.result == 0){
+				// were done reading file
+				uv_fs_close(serv->loop, &req, trac->file, NULL);
+				trac->canDelete = true;
+				strcpy((char*)data->data, "EOF");
+				sendPck((uv_stream_t*)trac->Socket, Server::write_cb, serv->serverName, SPTP_DATA, data, 7);
+			} else {
+				trac->fileOffset += req.result;
+				sendPck((uv_stream_t*)trac->Socket, Server::write_cb, serv->serverName, SPTP_DATA, data, req.result);
+			} 
+			uv_fs_req_cleanup(&req);
+			free(data);
+
+		}
+	}
 }

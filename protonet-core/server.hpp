@@ -26,6 +26,7 @@ class Server {
 		uv_loop_t* loop;
 		uv_thread_t tid;
 		uv_timer_t pollTimeout;
+		uv_check_t tracChecker;
 	    int nConn;
 	    char IP[INET_ADDRSTRLEN];		/* host IP */
 	    char destIP[INET_ADDRSTRLEN];	/* Destination IP */
@@ -42,6 +43,7 @@ class Server {
 			static void pckParser(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf);
 			static void alloc_buf(uv_handle_t *handle, size_t suggested_size, uv_buf_t *buf);
 			static void write_cb(uv_write_t *req, int status);
+			static void tracCheck(uv_check_t *handle);
 			static void threadStart(void* data);
 
 };

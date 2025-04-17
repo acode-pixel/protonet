@@ -84,15 +84,15 @@ int sendPck(/*int fd*/ uv_stream_t* stream_tcp, uv_write_cb write_cb, char* Name
 	pck = (Packet*) malloc(sizeof(Packet) + pckSize+1);
 	memset(pck, 0, sizeof(Packet) + pckSize+1);
 	memcpy(pck->Proto, "SPTP", 4);
-	memcpy(pck->Name, Name, 12);
+	strcpy(pck->Name, Name);
 	pck->Mode = Mode;
 
-	if (pckSize > 1024){
+	/*if (pckSize > 1024){
 		errno = 84;
 		log_fatal("Failed creating packet: %s", strerror(errno));
 		free(pck);
 		return -1;
-	}
+	}*/
 	
 	memcpy(pck->data, data, pckSize);
 	pck->datalen = pckSize+1;
@@ -133,7 +133,7 @@ int readPck(int fd, Packet* buf){
 	return 0;
 } 
 */
-int fillTracItem(tracItem* trac, uint tracID, char* fileRequester, uint8_t hops, uint8_t lifetime, void* fileOffset, char* fileReq){
+int fillTracItem(tracItem* trac, uint tracID, char* fileRequester, uint8_t hops, uint8_t lifetime, int fileOffset, char* fileReq){
 	trac->tracID = tracID;
 	trac->hops = hops;
 	trac->lifetime = lifetime;

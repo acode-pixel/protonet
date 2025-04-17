@@ -15,7 +15,6 @@
 extern "C" {
 #endif
 
-#include <unistd.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdint.h>
@@ -43,13 +42,14 @@ struct BROD {
 
 struct DATA {
 	uint tracID;
-	uint8_t data[1020];
+	uint8_t data[65508];
 };
 
 struct TRAC {
 	uint tracID;
 	uint8_t hops;
 	uint8_t lifetime;
+	size_t fileSize;
 	char Name[12]; // Name of the file requester
 };
 
@@ -59,11 +59,11 @@ typedef struct tracItem {
 	char fileRequester[12]; // Name of file requester
 	uv_tcp_t* Socket; // Socket to file requester
 	uint socketStatus; // status of socket 
-	uv_file* file; // fd to requested file (if trac is confirmed)
+	uv_file file; // fd to requested file (if trac is confirmed)
 	uint fileSize; // size of file requested
 	uint8_t hops; 		// hops between client and server from initial BROD packet
 	uint8_t lifetime; 	// calculated lifetime of packet from hops
-	void* fileOffset; 	// current file offset
+	int fileOffset; 	// current file offset
 	uint8_t confirmed; 	// if transaction id is confirmed
 	uint8_t canDelete;	// if transaction can be deleted
 	char fileReq[255]; 	// file requested
@@ -76,7 +76,7 @@ typedef struct Packet {
 	uint8_t Mode;
 	uint32_t datalen;
 
-	uint8_t data[]; /* MAX 1024 */
+	uint8_t data[];
 } Packet;
 
 typedef struct Protonet {
@@ -98,7 +98,7 @@ void NOP(uv_timer_t *handle);
 MYLIB_API uv_interface_address_t getInterIP(char interface_name[]);
 MYLIB_API int sendPck(/*int fd*/ uv_stream_t* stream_tcp, uv_write_cb write_cb, char* Name, uint8_t Mode, void* data, uint size);
 /*int readPck(int fd, Packet* buf);*/
-MYLIB_API int fillTracItem(tracItem* trac, uint tracID, char* fileRequester, uint8_t hops, uint8_t lifetime, void* fileOffset, char* fileReq);
+MYLIB_API int fillTracItem(tracItem* trac, uint tracID, char* fileRequester, uint8_t hops, uint8_t lifetime, int fileOffset, char* fileReq);
 MYLIB_API void failCallback(log_Event *ev);
 MYLIB_API Protonet* Init(void);
 MYLIB_API Protonet* Stop(void);
@@ -107,7 +107,7 @@ MYLIB_API void failTest(void);
 uv_interface_address_t getInterIP(char interface_name[]);
 int sendPck(/*int fd*/ uv_stream_t* stream_tcp, uv_write_cb write_cb, char* Name, uint8_t Mode, void* data, uint size);
 /*int readPck(int fd, Packet* buf);*/
-int fillTracItem(tracItem* trac, uint tracID, char* fileRequester, uint8_t hops, uint8_t lifetime, void* fileOffset, char* fileReq);
+int fillTracItem(tracItem* trac, uint tracID, char* fileRequester, uint8_t hops, uint8_t lifetime, int fileOffset, char* fileReq);
 void failCallback(log_Event *ev);
 MYLIB_API Protonet* Init(void);
 MYLIB_API Protonet* Stop(void);

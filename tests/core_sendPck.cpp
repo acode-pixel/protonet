@@ -8,6 +8,7 @@
 
 uv_thread_t thread1;
 uv_async_t async;
+int totalRead = 0;
 
 void write_cb(uv_write_t *req, int status){
     if(status < 0){
@@ -22,18 +23,22 @@ void on_connect(uv_connect_t *req, int status){
         printf("Connection error: %s\n", uv_strerror(status));
         exit(-1);
     }
-    sendPck(req->handle, write_cb, "bob", 1, (void*)"packet test", 0);
+
+    sendPck(req->handle, write_cb, "bob", 1, (void *)"packet test", 0);
     free(req);
 }
 
 void alloc_cb(uv_handle_t* handle, size_t suggested_size, uv_buf_t* buf) {
-  buf->base = (char*)malloc(1024);
-  buf->len = 1024;
+  buf->base = (char*)malloc(suggested_size);
+  buf->len = suggested_size;
 }
 
 void read_cb(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf){
     if(nread > 0){
         printf("read bytes: %d\n", nread);
+        Packet* pck = (Packet*)buf->base;
+        printf("Data size: %d\n", pck->datalen);
+        printf("Data: %s\n", pck->data);
         uv_stop(stream->loop);
     } else if(nread < 0) {
         printf("ERROR: %s", uv_strerror(nread));

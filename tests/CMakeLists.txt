@@ -4,7 +4,8 @@ project("tests" C)
 set(core_functions init)
 
 set(client_functions connectToNetwork makeFileReq)
-
+set(server_functions)
+## MingW or msvc?
 if(WIN32)
     set(DLL_PATH "${CMAKE_BINARY_DIR}/protonet-core/libproto.dll")
     set(OUT_PATH "${PROJECT_BINARY_DIR}/libproto.dll")
@@ -54,6 +55,7 @@ endforeach()
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     list(APPEND core_functions failCallback getInterIP sendPck)
+    list(APPEND server_functions tracCheck)
 endif()
 
 foreach(i IN LISTS core_functions)
@@ -73,4 +75,23 @@ foreach(i IN LISTS core_functions)
     endif()
 
     add_test(NAME LIBPROTO_core_${i} COMMAND core_test_${i})
+endforeach()
+
+foreach(i IN LISTS server_functions)
+    add_executable(server_test_${i} server_${i}.cpp)
+    target_link_libraries(server_test_${i} ${LIB_PATH} uv)
+    target_include_directories(server_test_${i} PUBLIC "../protonet-core/")
+
+    if(WIN32)
+        add_dependencies(server_test_${i} copy_lib)
+        if(CMAKE_BUILD_TYPE STREQUAL "Release")
+            add_dependencies(server_test_${i} copy_libuv)
+        endif()
+    endif()
+
+    if(CMAKE_BUILD_TYPE STREQUAL "Debug") 
+        target_compile_definitions(server_test_${i} PUBLIC DEBUG)
+    endif()
+
+    add_test(NAME LIBPROTO_core_${i} COMMAND server_test_${i})
 endforeach()
