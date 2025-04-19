@@ -2,6 +2,7 @@
 
 FILE* flog;
 Protonet* _p;
+uv_mutex_t logLock;
 
 void NOP(uv_timer_t *handle){
 	return;
@@ -35,6 +36,8 @@ Protonet* Init(void){
 	}
 
 	log_add_fp(flog, LOG_INFO);
+	uv_mutex_init_recursive(&logLock);
+	log_set_lock(logLocker, NULL);
 	log_add_callback(failCallback, NULL, LOG_FATAL);
 	log_info("Started at %d:%02d:%02d_%02d:%02d:%02d", tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
 	_p = malloc(sizeof(Protonet));
@@ -166,6 +169,14 @@ Protonet* Stop(void){
 	free(_p);
 	_p = NULL;
 	return NULL;
+}
+
+void logLocker(bool lock, void* udata){
+	if(lock)
+		uv_mutex_lock(&logLock);
+	else {
+		uv_mutex_unlock(&logLock);
+	}
 }
 
 #ifdef DEBUG

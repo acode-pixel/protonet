@@ -17,11 +17,12 @@ Server::Server(char* inter, char* serverName, char Dir[], char* peerIp){
 	log_info("Server IP: %s", this->IP);
 	strcpy(this->serverName, serverName);
 	log_info("Server name: %s", this->serverName);
-	memset(this->dir, 0, strlen(Dir)+1);
-	memcpy(this->dir, Dir, strlen(Dir));
-	if (strcmp("/", &this->dir[strlen(this->dir)]) != 0)
-		strcat(this->dir, "/");
-	log_info("Server dir: %s", this->dir);
+	//memset(this->dir, 0, strlen(Dir)+1);
+	dir.assign(Dir);
+	//memcpy(this->dir, Dir, strlen(Dir));
+	if (strcmp("/", &dir.back()) != 0)
+		dir += "/";
+	log_info("Server dir: %s", this->dir.c_str());
 
 	this->Socket = (uv_tcp_t*)malloc(sizeof(uv_tcp_t));
 	uv_tcp_init(loop, this->Socket);
@@ -36,7 +37,7 @@ Server::Server(char* inter, char* serverName, char Dir[], char* peerIp){
 	}
 
 	if(strlen(peerIp) > 0){
-		Client* client = new Client(inter, serverName, peerIp);
+		Client* client = new Client(inter, serverName, peerIp, Dir);
 		//client->connectToNetwork(peerIp);
 		memcpy(&this->client, client, sizeof(Client));
 		strcpy(this->IP, peerIp);
@@ -145,10 +146,10 @@ void Server::pckParser(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf){
 	if(pck->Mode == SPTP_BROD){
 		log_debug("Server received BROD packet");
 		struct BROD* pckData = (struct BROD*)pck->data;
-		char filepath[strlen(server->dir)+strlen(pckData->fileReq)+1];
+		char filepath[server->dir.size()+strlen(pckData->fileReq)+1];
 		memset(filepath, 0, sizeof(filepath));
-		memcpy(filepath, server->dir, strlen(server->dir));
-		memcpy(&filepath[strlen(server->dir)], pckData->fileReq, strlen(pckData->fileReq));
+		strcpy(filepath, server->dir.c_str());
+		memcpy(&filepath[server->dir.size()], pckData->fileReq, strlen(pckData->fileReq));
 		uv_fs_t req;
 		uv_fs_access(server->loop, &req, filepath, UV_FS_O_RDONLY, NULL);
 
@@ -174,6 +175,7 @@ void Server::pckParser(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf){
 		data->fileSize = req.statbuf.st_size;
 
 		tracItem* trac = (tracItem*)malloc(sizeof(tracItem));
+		memset(trac, 0, sizeof(tracItem));
 		trac->tracID = data->tracID;
 		trac->lifetime = data->lifetime;
 		trac->socketStatus = SPTP_TRAC;
@@ -238,10 +240,10 @@ void Server::tracCheck(uv_check_t *handle){
 			}
 
 			struct DATA* data = (struct DATA*)malloc(sizeof(struct DATA));
-			memset(data, 0, 65512);
+			memset(data, 0, sizeof(struct DATA));
 			data->tracID = trac->tracID;
-			uv_buf_t buff = uv_buf_init((char*)data->data, 65508);
-			uv_fs_read(serv->loop, &req, trac->file, &buff, 1, trac->fileOffset, NULL);
+			uv_buf_t buff = uv_buf_init((char*)data->data, MAX_FILESIZE);
+			uv_fs_read(serv->loop, &req, trac->file, &buff, 1, -1, NULL);
 			//int r = read(trac->file, buff, 65512);
 
 			if(req.result < 0){
@@ -255,7 +257,7 @@ void Server::tracCheck(uv_check_t *handle){
 				sendPck((uv_stream_t*)trac->Socket, Server::write_cb, serv->serverName, SPTP_DATA, data, 7);
 			} else {
 				trac->fileOffset += req.result;
-				sendPck((uv_stream_t*)trac->Socket, Server::write_cb, serv->serverName, SPTP_DATA, data, req.result);
+				sendPck((uv_stream_t*)trac->Socket, Server::write_cb, serv->serverName, SPTP_DATA, data, sizeof(struct DATA)-(MAX_FILESIZE-req.result));
 			} 
 			uv_fs_req_cleanup(&req);
 			free(data);

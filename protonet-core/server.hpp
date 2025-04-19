@@ -9,6 +9,7 @@ extern "C" {
 }
 #include "client.hpp"
 #include "vector"
+#include "string"
 
 using namespace std; 
 
@@ -34,7 +35,7 @@ class Server {
 	    Client* client;		/* for client-server hybrid */
 	    vector<Client*> Clientlist;
 	    vector<tracItem*> Traclist;
-	    char dir[];	/* Server Dir */
+	    string dir;	/* Server Dir */
 
 		MYLIB_API Server(char* inter, char* serverName, char Dir[], char* peerIp);
 

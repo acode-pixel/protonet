@@ -5,6 +5,11 @@ extern "C" {
     #include "./core.h"
     #include "./log.h"
 }
+
+#include <string>
+
+using namespace std;
+
 class Client {
     public:
         uv_thread_t tid;
@@ -15,8 +20,9 @@ class Client {
 	    tracItem trac;
 	    char fileReq[255];
         uv_loop_t* loop;
+        string outDir;
 
-        MYLIB_API Client(char* inter, char name[], char* IP);
+        MYLIB_API Client(char* inter, char name[], char* IP, char outpath[]);
         MYLIB_API ~Client();
         int connectToNetwork(char* IP);
         MYLIB_API int makeFileReq(char File[]);

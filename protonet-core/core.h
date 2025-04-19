@@ -32,6 +32,7 @@ extern "C" {
 
 #define C_PORT 5657
 #define S_PORT 5657
+#define MAX_FILESIZE 14000
 
 typedef unsigned int uint;
 
@@ -42,7 +43,7 @@ struct BROD {
 
 struct DATA {
 	uint tracID;
-	uint8_t data[65508];
+	uint8_t data[MAX_FILESIZE];
 };
 
 struct TRAC {
@@ -100,6 +101,7 @@ MYLIB_API int sendPck(/*int fd*/ uv_stream_t* stream_tcp, uv_write_cb write_cb, 
 /*int readPck(int fd, Packet* buf);*/
 MYLIB_API int fillTracItem(tracItem* trac, uint tracID, char* fileRequester, uint8_t hops, uint8_t lifetime, int fileOffset, char* fileReq);
 MYLIB_API void failCallback(log_Event *ev);
+MYLIB_API void logLocker(bool lock, void* udata);
 MYLIB_API Protonet* Init(void);
 MYLIB_API Protonet* Stop(void);
 MYLIB_API void failTest(void);
@@ -109,6 +111,7 @@ int sendPck(/*int fd*/ uv_stream_t* stream_tcp, uv_write_cb write_cb, char* Name
 /*int readPck(int fd, Packet* buf);*/
 int fillTracItem(tracItem* trac, uint tracID, char* fileRequester, uint8_t hops, uint8_t lifetime, int fileOffset, char* fileReq);
 void failCallback(log_Event *ev);
+void logLocker(bool lock, void* udata);
 MYLIB_API Protonet* Init(void);
 MYLIB_API Protonet* Stop(void);
 #endif
