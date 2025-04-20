@@ -7,15 +7,18 @@ Client:: Client(char* inter, char name[], char* IP, char outpath[]){
 	addr = getInterIP(inter);
 	log_info("Client IP: %s", inet_ntoa(addr.address.address4.sin_addr));
 
-	if (name == NULL){
-		uv_ip4_name(&addr.address.address4, this->name, INET_ADDRSTRLEN);
+	if (name == NULL || strlen(name) >= 255){
+		(strlen(name) >= 255) ? log_info("Note: Name should be less than 255.") : (void)NULL;
+		char str_addr[INET_ADDRSTRLEN];
+		uv_ip4_name(&addr.address.address4, str_addr, INET_ADDRSTRLEN);
+		this->name->assign(str_addr);
 	} 
 
-	else {strcpy(this->name, name);}
-	log_info("Client name: %s", this->name);
+	else {this->name->assign(name);}
+	log_info("Client name: %s", this->name->c_str());
 	this->tid = uv_thread_self();
 
-	if(this->name != NULL){
+	if(!this->name->empty()){
 		uv_loop_t* loop = (uv_loop_t*)malloc(sizeof(uv_loop_t));
 		uv_loop_init(loop);
 		this->loop = loop;
@@ -33,8 +36,8 @@ Client:: Client(char* inter, char name[], char* IP, char outpath[]){
 
 		uv_fs_req_cleanup(&req);
 
-		this->outDir.assign(outpath);
-		log_info("Client output Dir: %s", this->outDir.c_str());
+		this->outDir->assign(outpath);
+		log_info("Client output Dir: %s", this->outDir->c_str());
 
 		proto_setClient(this);
 		int r = Client::connectToNetwork(IP);
@@ -70,6 +73,12 @@ Client::~Client(){
 	}
 	uv_stop(this->loop);
 	free(this->loop);
+	if(this->fileReq != NULL)
+		delete this->fileReq;
+	if(this->outDir != NULL)
+		delete this->outDir;
+	if(this->name != NULL)
+		delete this->name;
 	return;
 }
 
@@ -120,11 +129,11 @@ int Client::makeFileReq(char File[]){
 	memset(br, 0, sizeof(struct BROD) + strlen(File)+1);
 	br->hops = 0x01;
 	strcpy(br->fileReq, File);
-	strcpy(this->fileReq, File);
+	this->fileReq->assign(File);
 	//this->socketMode = SPTP_BROD;
-	sendPck(this->socket, Client::on_write, this->name, 1, br, 0);
-	strcpy(this->trac.fileRequester, this->name);
-	strcpy(this->trac.fileReq, this->fileReq);
+	sendPck(this->socket, Client::on_write, (char*)this->name->c_str(), 1, br, 0);
+	strcpy(this->trac.fileRequester, this->name->c_str());
+	strcpy(this->trac.fileReq, this->fileReq->c_str());
 
 	//fillTracItem(&this->trac, 0, this->name, 0, 0, NULL, this->name);
 	free(br);
@@ -184,7 +193,7 @@ void Client::read(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf){
 	if (pck->Mode == SPTP_TRAC){
 		struct TRAC* pckdata = (struct TRAC*)pck->data;
 
-		if(strcmp(pckdata->Name, client->name) != 0){
+		if(strcmp(pckdata->Name, client->name->c_str()) != 0){
 			if(proto_getServer() != NULL){
 				// WIP (when it isnt for us but we can send it to someone else)
 			}
@@ -201,7 +210,7 @@ void Client::read(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf){
 		client->trac.Socket = (uv_tcp_t*)stream;
 		client->trac.fileSize = pckdata->fileSize;
 		strcpy((char*)data->data, "OK");
-		sendPck(client->socket, Client::on_write, client->name, SPTP_DATA, data, sizeof(data));
+		sendPck(client->socket, Client::on_write, (char*)client->name->c_str(), SPTP_DATA, data, sizeof(data));
 		free(data);
 		
 	} else if(pck->Mode == SPTP_DATA){
@@ -215,7 +224,7 @@ void Client::read(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf){
 		} else {
 			if(client->trac.file == 0){
 				string filepath;
-				filepath.assign(client->outDir).append(client->trac.fileReq);
+				filepath.assign(*client->outDir).append(client->trac.fileReq);
 				uv_fs_open(client->loop, &req, filepath.c_str(), O_CREAT | O_RDWR, 0, NULL);
 				client->trac.file = req.result;
 				uv_fs_req_cleanup(&req);

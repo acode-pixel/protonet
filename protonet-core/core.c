@@ -136,7 +136,7 @@ int readPck(int fd, Packet* buf){
 	return 0;
 } 
 */
-int fillTracItem(tracItem* trac, uint tracID, char* fileRequester, uint8_t hops, uint8_t lifetime, int fileOffset, char* fileReq){
+/*int fillTracItem(tracItem* trac, uint tracID, char* fileRequester, uint8_t hops, uint8_t lifetime, int fileOffset, char* fileReq){
 	trac->tracID = tracID;
 	trac->hops = hops;
 	trac->lifetime = lifetime;
@@ -144,7 +144,7 @@ int fillTracItem(tracItem* trac, uint tracID, char* fileRequester, uint8_t hops,
 	strcpy(trac->fileReq, fileReq);
 	strcpy(trac->fileRequester, fileRequester);
 	return 0;
-}
+}*/
 
 void failCallback(log_Event *ev){
 	log_info("Shutting down API due to fatal error: %s", ev->fmt);

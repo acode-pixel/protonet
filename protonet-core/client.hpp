@@ -13,21 +13,19 @@ using namespace std;
 class Client {
     public:
         uv_thread_t tid;
-        char name[INET_ADDRSTRLEN];
+        string* name = new string();
         uv_stream_t* socket;
         uv_timer_t pollTimeout;
 	    int socketMode;
 	    tracItem trac;
-	    char fileReq[255];
+	    string* fileReq = new string();
         uv_loop_t* loop;
-        string outDir;
+        string* outDir = new string();
 
         MYLIB_API Client(char* inter, char name[], char* IP, char outpath[]);
         MYLIB_API ~Client();
         int connectToNetwork(char* IP);
         MYLIB_API int makeFileReq(char File[]);
-        int C_tracParser(Packet* buf);
-        int C_brodParser(Packet* buf);
     
     private:
         static void alloc_buf(uv_handle_t *handle, size_t suggested_size, uv_buf_t *buf);

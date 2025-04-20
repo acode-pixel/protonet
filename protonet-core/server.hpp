@@ -48,11 +48,4 @@ class Server {
 			static void threadStart(void* data);
 
 };
-/*
-#include "serverModules/clientModule.h"
-#include "serverModules/parserModules.h"
-#include "serverModules/tracModule.h"
-#include "serverModules/dataModule.h"
-#include "clientModules/parserModules.h"
-*/
 #endif

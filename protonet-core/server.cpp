@@ -1,9 +1,6 @@
 #include "server.hpp"
 
 Server::Server(char* inter, char* serverName, char Dir[], char* peerIp){
-
-	//memset(this, 0, sizeof(Server));
-
 	uv_interface_address_t addr = getInterIP(inter);
 
 	uv_loop_t* loop = (uv_loop_t*)malloc(sizeof(uv_loop_t));
@@ -17,9 +14,7 @@ Server::Server(char* inter, char* serverName, char Dir[], char* peerIp){
 	log_info("Server IP: %s", this->IP);
 	strcpy(this->serverName, serverName);
 	log_info("Server name: %s", this->serverName);
-	//memset(this->dir, 0, strlen(Dir)+1);
 	dir.assign(Dir);
-	//memcpy(this->dir, Dir, strlen(Dir));
 	if (strcmp("/", &dir.back()) != 0)
 		dir += "/";
 	log_info("Server dir: %s", this->dir.c_str());
@@ -38,7 +33,6 @@ Server::Server(char* inter, char* serverName, char Dir[], char* peerIp){
 
 	if(strlen(peerIp) > 0){
 		Client* client = new Client(inter, serverName, peerIp, Dir);
-		//client->connectToNetwork(peerIp);
 		memcpy(&this->client, client, sizeof(Client));
 		strcpy(this->IP, peerIp);
 	}
@@ -86,8 +80,10 @@ void Server::on_connection(uv_stream_t *stream, int status){
 		Client* new_client = (Client*)malloc(sizeof(Client));
 		struct sockaddr_storage addr;
 		int size = INET_ADDRSTRLEN;
+		char str_addr[INET_ADDRSTRLEN];
 		uv_tcp_getpeername(client_conn, (struct sockaddr*)&addr, &size);
-		uv_ip4_name((struct sockaddr_in*)&addr, new_client->name, INET_ADDRSTRLEN);
+		uv_ip4_name((struct sockaddr_in*)&addr, str_addr, INET_ADDRSTRLEN);
+		new_client->name = new string(str_addr);
 		new_client->socket = (uv_stream_t*)client_conn;
 
 		server->Clientlist.push_back(new_client);
@@ -244,7 +240,6 @@ void Server::tracCheck(uv_check_t *handle){
 			data->tracID = trac->tracID;
 			uv_buf_t buff = uv_buf_init((char*)data->data, MAX_FILESIZE);
 			uv_fs_read(serv->loop, &req, trac->file, &buff, 1, -1, NULL);
-			//int r = read(trac->file, buff, 65512);
 
 			if(req.result < 0){
 				log_error("Server failed to read requested file %s.[%s]", trac->fileReq, uv_err_name(req.result));

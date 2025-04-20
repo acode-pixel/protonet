@@ -57,7 +57,7 @@ struct TRAC {
 typedef struct tracItem {
 	uint tracID; 		// transaction ID
 	uint8_t deleted;	// transaction is deleted
-	char fileRequester[12]; // Name of file requester
+	char fileRequester[255]; // Name of file requester
 	uv_tcp_t* Socket; // Socket to file requester
 	uint socketStatus; // status of socket 
 	uv_file file; // fd to requested file (if trac is confirmed)
@@ -99,7 +99,7 @@ void NOP(uv_timer_t *handle);
 MYLIB_API uv_interface_address_t getInterIP(char interface_name[]);
 MYLIB_API int sendPck(/*int fd*/ uv_stream_t* stream_tcp, uv_write_cb write_cb, char* Name, uint8_t Mode, void* data, uint size);
 /*int readPck(int fd, Packet* buf);*/
-MYLIB_API int fillTracItem(tracItem* trac, uint tracID, char* fileRequester, uint8_t hops, uint8_t lifetime, int fileOffset, char* fileReq);
+//MYLIB_API int fillTracItem(tracItem* trac, uint tracID, char* fileRequester, uint8_t hops, uint8_t lifetime, int fileOffset, char* fileReq);
 MYLIB_API void failCallback(log_Event *ev);
 MYLIB_API void logLocker(bool lock, void* udata);
 MYLIB_API Protonet* Init(void);
@@ -109,7 +109,7 @@ MYLIB_API void failTest(void);
 uv_interface_address_t getInterIP(char interface_name[]);
 int sendPck(/*int fd*/ uv_stream_t* stream_tcp, uv_write_cb write_cb, char* Name, uint8_t Mode, void* data, uint size);
 /*int readPck(int fd, Packet* buf);*/
-int fillTracItem(tracItem* trac, uint tracID, char* fileRequester, uint8_t hops, uint8_t lifetime, int fileOffset, char* fileReq);
+//int fillTracItem(tracItem* trac, uint tracID, char* fileRequester, uint8_t hops, uint8_t lifetime, int fileOffset, char* fileReq);
 void failCallback(log_Event *ev);
 void logLocker(bool lock, void* udata);
 MYLIB_API Protonet* Init(void);
