@@ -48,6 +48,7 @@ Client:: Client(char* inter, char name[], char* IP, char outpath[]){
 			uv_timer_init(this->loop, &this->pollTimeout);
 			uv_timer_start(&this->pollTimeout, NOP, 200, 200);
 			log_info("Successfully created Client");
+			memset(&this->trac, 0, sizeof(tracItem));
 			uv_thread_create(&this->tid, Client::threadStart, this);
 			log_info("Started client thread: %lu", this->tid);
 		}
@@ -225,12 +226,12 @@ void Client::read(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf){
 			if(client->trac.file == 0){
 				string filepath;
 				filepath.assign(*client->outDir).append(client->trac.fileReq);
-				uv_fs_open(client->loop, &req, filepath.c_str(), O_CREAT | O_RDWR, 0, NULL);
+				uv_fs_open(client->loop, &req, filepath.c_str(), O_CREAT | O_RDWR, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH, NULL);
 				client->trac.file = req.result;
 				uv_fs_req_cleanup(&req);
 			}
 
-			uv_buf_t buff = uv_buf_init((char*)pckdata->data, pck->datalen-4);
+			uv_buf_t buff = uv_buf_init((char*)pckdata->data, pck->datalen-5);
 			uv_fs_write(client->loop, &req, client->trac.file, &buff, 1, client->trac.fileOffset, NULL);
 		}
 

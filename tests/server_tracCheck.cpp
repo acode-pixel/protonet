@@ -40,8 +40,25 @@ int main(int argc, char** argv){
 
     client->makeFileReq("test.txt");
     uv_sleep(2000);
-    if(!client->trac.canDelete)
+    uv_fs_access(client->loop, &req, "./test_dir/test.txt", F_OK, NULL);
+
+    if(req.result){
+        uv_fs_req_cleanup(&req);
+        uv_fs_unlink(client->loop, &req, "./test_dir/test.txt", NULL);
+        uv_fs_req_cleanup(&req);
+        uv_fs_rmdir(client->loop, &req, "./test_dir", NULL);
+        uv_fs_req_cleanup(&req);
+        uv_fs_unlink(client->loop, &req, "./test.txt", NULL);
+        uv_fs_req_cleanup(&req);
         return -1;
-    
+    }
+
+    uv_fs_req_cleanup(&req);
+    uv_fs_unlink(client->loop, &req, "./test_dir/test.txt", NULL);
+    uv_fs_req_cleanup(&req);
+    uv_fs_rmdir(client->loop, &req, "./test_dir", NULL);
+    uv_fs_req_cleanup(&req);
+    uv_fs_unlink(client->loop, &req, "./test.txt", NULL);
+    uv_fs_req_cleanup(&req);
     return 0;
 }
