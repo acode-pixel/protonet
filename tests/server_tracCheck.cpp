@@ -17,7 +17,7 @@ int main(int argc, char** argv){
 
     uv_fs_t req;
 
-    uv_fs_open(server->loop, &req, "./test.txt", O_WRONLY | O_CREAT, 0, NULL);
+    uv_fs_open(server->loop, &req, "./test.txt", O_WRONLY | O_CREAT, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH, NULL);
     int fd = req.result;
     uv_fs_req_cleanup(&req);
     char data[] = "Test baby woooooooo";
@@ -28,6 +28,8 @@ int main(int argc, char** argv){
     uv_fs_req_cleanup(&req);
 
     uv_fs_mkdir(server->loop, &req, "./test_dir", O_RDWR, NULL);
+    uv_fs_req_cleanup(&req);
+    uv_fs_chmod(server->loop, &req, "./test_dir", S_IRWXU | S_IXGRP | S_IRGRP | S_IROTH | S_IXOTH, NULL);
     uv_fs_req_cleanup(&req);
 
         #ifdef _WIN32
