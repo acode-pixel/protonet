@@ -13,14 +13,6 @@ extern "C" {
 
 using namespace std; 
 
-typedef struct clientList {
-	Client* clients[MAX_CLIENTS];
-} clientList;
-
-typedef struct tracList {
-	tracItem tracs[MAX_CLIENTS];
-} tracList;
-
 class Server {
     public:
 	    uv_tcp_t* Socket;		/* Socket */
