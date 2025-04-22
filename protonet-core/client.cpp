@@ -221,7 +221,7 @@ void Client::read(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf){
 		if(strcmp((char*)pckdata->data, "EOF") == 0){
 			// close open file
 			uv_fs_close(client->loop, &req, client->trac.file, NULL);
-			client->trac.canDelete = true;
+			client->trac.complete = true;
 		} else {
 			if(client->trac.file == 0){
 				string filepath;

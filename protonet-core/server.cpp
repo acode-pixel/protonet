@@ -215,8 +215,9 @@ void Server::tracCheck(uv_check_t *handle){
 
 			if(!trac->confirmed){
 				continue;
-			} else if(trac->canDelete){
-				memset(trac, 0, sizeof(tracItem));
+			} else if(trac->complete){
+				// prepare trac for other requests
+				//memset(trac, 0, sizeof(tracItem));
 				continue;
 			}
 
@@ -247,7 +248,7 @@ void Server::tracCheck(uv_check_t *handle){
 			} else if(req.result == 0){
 				// were done reading file
 				uv_fs_close(serv->loop, &req, trac->file, NULL);
-				//trac->canDelete = true;
+				trac->complete = true;
 				strcpy((char*)data->data, "EOF");
 				sendPck((uv_stream_t*)trac->Socket, Server::write_cb, serv->serverName, SPTP_DATA, data, 7);
 			} else {

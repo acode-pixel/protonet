@@ -67,6 +67,7 @@ typedef struct tracItem {
 	uint8_t lifetime; 	// calculated lifetime of packet from hops
 	int fileOffset; 	// current file offset
 	uint8_t confirmed; 	// if transaction id is confirmed
+	bool complete;		// if transaction is complete
 	uint8_t canDelete;	// if transaction can be deleted
 	char fileReq[255]; 	// file requested
 
