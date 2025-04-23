@@ -68,7 +68,7 @@ typedef struct tracItem {
 	int fileOffset; 	// current file offset
 	uint8_t confirmed; 	// if transaction id is confirmed
 	bool complete;		// if transaction is complete
-	uint8_t canDelete;	// if transaction can be deleted
+	bool canDelete;	// if transaction can be deleted
 	char fileReq[255]; 	// file requested
 
 } tracItem;

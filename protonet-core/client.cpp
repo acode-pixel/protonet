@@ -106,6 +106,24 @@ int Client::connectToNetwork(char* IP){
 	return -1; 
 }
 
+int Client::disconnectFromNetwork(){
+	uv_fs_t req;
+	this->socket->data = this;
+	if(this->trac.tracID != 0){
+		char* data = "DISCONNECT";
+                 sendPck((uv_stream_t*)this->trac.Socket, Client::on_write, (char*)this->name->c_str(), SPTP_DATA, data, 10);
+	} else {
+		uv_close((uv_handle_t*)this->trac.Socket, Client::on_disconnect);
+	}
+	return 0;
+}
+
+void Client::on_disconnect(uv_handle_t* handle){
+	log_info("Disconnected from network.");
+	delete (Client*)handle->data;
+	//uv_thread_detach(uv_thread_self());
+}
+
 void Client::on_connect(uv_connect_t *req, int status){
     Client* client = (Client*)(req->handle->data);
     if (status == 0) {
