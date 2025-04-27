@@ -3,9 +3,9 @@ project("tests" C)
 
 set(core_functions init)
 
-set(client_functions connectToNetwork makeFileReq)
-set(server_functions)
-## MingW or msvc?
+set(client_functions connectToNetwork makeFileReq disconnectFromNetwork)
+set(server_functions tracCheck)
+## MingW
 if(WIN32)
     set(DLL_PATH "${CMAKE_BINARY_DIR}/protonet-core/libproto.dll")
     set(OUT_PATH "${PROJECT_BINARY_DIR}/libproto.dll")
@@ -55,7 +55,6 @@ endforeach()
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     list(APPEND core_functions failCallback getInterIP sendPck)
-    list(APPEND server_functions tracCheck)
 endif()
 
 foreach(i IN LISTS core_functions)
@@ -93,5 +92,5 @@ foreach(i IN LISTS server_functions)
         target_compile_definitions(server_test_${i} PUBLIC DEBUG)
     endif()
 
-    add_test(NAME LIBPROTO_core_${i} COMMAND server_test_${i})
+    add_test(NAME LIBPROTO_server_${i} COMMAND server_test_${i})
 endforeach()

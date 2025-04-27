@@ -44,7 +44,7 @@ struct BROD {
 
 struct DATA {
 	uint tracID;
-	uint8_t data[MAX_FILESIZE];
+	char data[MAX_FILESIZE];
 };
 
 struct TRAC {

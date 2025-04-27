@@ -190,15 +190,51 @@ void Server::pckParser(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf){
 		uv_fs_req_cleanup(&req);
 
 	} else if(pck->Mode == SPTP_DATA){
-		//  make a func that schedule the sending of file data client requested
+		//  handle disconnect when were client/server hybrid
 		struct DATA* data = (struct DATA*)pck->data;
-		for (tracItem* trac : server->Traclist){
-			if(strcmp(pck->Name, trac->fileRequester) == 0 && data->tracID == trac->tracID){
-				if(strcmp((char*)data->data, "OK") == 0){
-					trac->confirmed = true;
-					trac->Socket = (uv_tcp_t*)stream;
-					trac->socketStatus = SPTP_DATA;
-					break;
+
+		if(strcmp(data->data, "DISCONNECT") == 0){
+			struct sockaddr_storage addr;
+			int size = INET_ADDRSTRLEN;
+			char str_addr[INET_ADDRSTRLEN];
+			uv_tcp_getpeername((uv_tcp_t*)stream, (struct sockaddr*)&addr, &size);
+			uv_ip4_name((struct sockaddr_in*)&addr, str_addr, INET_ADDRSTRLEN);
+
+			for (Client* client : server->Clientlist){
+				
+				if(strcmp(client->name->c_str(), pck->Name) == 0 || strcmp(client->name->c_str(), str_addr) == 0){
+					char* msg = "DISCONNECT OK";
+					struct DATA* buff = (struct DATA*)malloc(sizeof(struct DATA));
+					strcpy(buff->data, msg);
+					buff->tracID = data->tracID;
+					sendPck(stream, Server::write_cb, server->serverName, SPTP_DATA, buff, sizeof(struct DATA)-(MAX_FILESIZE-13));
+					free(buff);
+
+					uv_shutdown_t req;
+					uv_shutdown(&req, stream, NULL);
+					uv_read_stop(stream);
+
+					for (auto it = server->Traclist.begin(); it != server->Traclist.end(); ++it) {
+						if(((tracItem*)(*it))->tracID == data->tracID){
+							free(*it);
+							server->Traclist.erase(it);
+							break;
+						}
+					}
+
+					log_info("Disconnecting from %s", (strcmp(client->name->c_str(), pck->Name) == 0) ? pck->Name : str_addr);
+				}
+
+			}
+		} else {
+			for (tracItem* trac : server->Traclist){
+				if(strcmp(pck->Name, trac->fileRequester) == 0 && data->tracID == trac->tracID){
+					if(strcmp((char*)data->data, "OK") == 0){
+						trac->confirmed = true;
+						trac->Socket = (uv_tcp_t*)stream;
+						trac->socketStatus = SPTP_DATA;
+						break;
+					}
 				}
 			}
 		}

@@ -1,4 +1,5 @@
 #include "client.hpp"
+// make client name random letters not ip
 
 Client:: Client(char* inter, char name[], char* IP, char outpath[]){
 	log_add_callback(failCallback, NULL, 5);
@@ -64,7 +65,10 @@ Client:: Client(char* inter, char name[], char* IP, char outpath[]){
 
 void Client::threadStart(void* data){
 	Client* client = (Client*)data;
+	uv_loop_t* loop = client->loop;
 	uv_run(client->loop, UV_RUN_DEFAULT);
+	free(loop);
+	return;
 }
 
 
@@ -72,15 +76,16 @@ Client::~Client(){
 	if(uv_is_active((uv_handle_t*)&this->socket) != 0){
 		uv_close((uv_handle_t*)&this->socket, NULL);
 	}
-	uv_stop(this->loop);
-	free(this->loop);
+	if(uv_loop_alive(this->loop) != 0)
+		uv_stop(this->loop);
+
 	if(this->fileReq != NULL)
 		delete this->fileReq;
 	if(this->outDir != NULL)
 		delete this->outDir;
 	if(this->name != NULL)
 		delete this->name;
-	return;
+	//free(this->loop);
 }
 
 int Client::connectToNetwork(char* IP){
@@ -102,25 +107,40 @@ int Client::connectToNetwork(char* IP){
 	if(this->socket != NULL){
 		log_info("Connected to %s", IP);
 		return 0;
-	}
+	} 
 	return -1; 
 }
 
 int Client::disconnectFromNetwork(){
 	uv_fs_t req;
 	this->socket->data = this;
+	// note: somehow handle disconnect if it is server hybrid
 	if(this->trac.tracID != 0){
 		char* data = "DISCONNECT";
-                 sendPck((uv_stream_t*)this->trac.Socket, Client::on_write, (char*)this->name->c_str(), SPTP_DATA, data, 10);
+		struct DATA* buff = (struct DATA*)malloc(sizeof(struct DATA));
+		strcpy(buff->data, data);
+		buff->tracID = this->trac.tracID;
+        sendPck((uv_stream_t*)this->trac.Socket, Client::on_write, (char*)this->name->c_str(), SPTP_DATA, buff, sizeof(struct DATA)-(MAX_FILESIZE-10));
+		free(buff);
 	} else {
-		uv_close((uv_handle_t*)this->trac.Socket, Client::on_disconnect);
+		//uv_close((uv_handle_t*)this->trac.Socket, Client::on_disconnect);
+		uv_shutdown_t req;
+		req.data = this;
+		uv_shutdown(&req, this->socket, Client::on_disconnect);
+		uv_read_stop(this->socket);
 	}
 	return 0;
 }
 
-void Client::on_disconnect(uv_handle_t* handle){
-	log_info("Disconnected from network.");
-	delete (Client*)handle->data;
+void Client::on_disconnect(uv_shutdown_t *req, int status){
+	Client* client = (Client*)req->data;
+	struct sockaddr_storage addr;
+	int size = INET_ADDRSTRLEN;
+	char str_addr[INET_ADDRSTRLEN];
+	uv_tcp_getpeername((uv_tcp_t*)client->socket, (struct sockaddr*)&addr, &size);
+	uv_ip4_name((struct sockaddr_in*)&addr, str_addr, INET_ADDRSTRLEN);
+	log_info("Disconnected from %s", str_addr);
+	//delete client;
 	//uv_thread_detach(uv_thread_self());
 }
 
@@ -228,8 +248,9 @@ void Client::read(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf){
 		client->trac.hops = pckdata->hops;
 		client->trac.Socket = (uv_tcp_t*)stream;
 		client->trac.fileSize = pckdata->fileSize;
+		client->trac.tracID = pckdata->tracID;;
 		strcpy((char*)data->data, "OK");
-		sendPck(client->socket, Client::on_write, (char*)client->name->c_str(), SPTP_DATA, data, sizeof(data));
+		sendPck(client->socket, Client::on_write, (char*)client->name->c_str(), SPTP_DATA, data, sizeof(struct DATA)-(MAX_FILESIZE-2));
 		free(data);
 		
 	} else if(pck->Mode == SPTP_DATA){
@@ -240,6 +261,12 @@ void Client::read(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf){
 			// close open file
 			uv_fs_close(client->loop, &req, client->trac.file, NULL);
 			client->trac.complete = true;
+			uv_fs_req_cleanup(&req);
+		} else if(strcmp((char*)pckdata->data, "DISCONNECT OK") == 0){
+			uv_shutdown_t req;
+			req.data = client;
+			uv_shutdown(&req, client->socket, Client::on_disconnect);
+			uv_read_stop(client->socket);
 		} else {
 			if(client->trac.file == 0){
 				string filepath;
@@ -251,9 +278,8 @@ void Client::read(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf){
 
 			uv_buf_t buff = uv_buf_init((char*)pckdata->data, pck->datalen-5);
 			uv_fs_write(client->loop, &req, client->trac.file, &buff, 1, client->trac.fileOffset, NULL);
+			uv_fs_req_cleanup(&req);
 		}
-
-		uv_fs_req_cleanup(&req);
 
 
 	}
