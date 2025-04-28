@@ -11,7 +11,7 @@ stages:
 
 test-linux-Release:
   stage: test-linux-Release
-  image: gcc:latest
+  image: ubuntu:latest
   script:
     - apt-get update
     - apt install -y python3-full cmake pip
@@ -27,7 +27,7 @@ test-linux-Release:
 
 test-linux-Debug:
   stage: test-linux-Debug
-  image: gcc:latest
+  image: ubuntu:latest
   script:
     - apt-get update
     - apt install -y python3-full cmake pip
