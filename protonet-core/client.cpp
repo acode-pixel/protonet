@@ -81,8 +81,8 @@ Client::~Client(){
 
 	if(this->fileReq != NULL)
 		delete this->fileReq;
-	if(this->outDir != NULL)
-		delete this->outDir;
+	//if(this->outDir != NULL)
+	//	delete this->outDir;
 	if(this->name != NULL)
 		delete this->name;
 	//free(this->loop);
@@ -112,21 +112,22 @@ int Client::connectToNetwork(char* IP){
 }
 
 int Client::disconnectFromNetwork(){
-	uv_fs_t req;
-	this->socket->data = this;
+	//uv_fs_t req;
+	//this->socket->data = this;
+	uv_shutdown_t* shreq = (uv_shutdown_t*)malloc(sizeof(uv_shutdown_t));
+	shreq->data = this;
 	// note: somehow handle disconnect if it is server hybrid
 	if(this->trac.tracID != 0){
-		char* data = "DISCONNECT";
+		char data[] = "DISCONNECT";
 		struct DATA* buff = (struct DATA*)malloc(sizeof(struct DATA));
 		strcpy(buff->data, data);
 		buff->tracID = this->trac.tracID;
         sendPck((uv_stream_t*)this->trac.Socket, Client::on_write, (char*)this->name->c_str(), SPTP_DATA, buff, sizeof(struct DATA)-(MAX_FILESIZE-10));
+		uv_shutdown(shreq, this->socket, Client::on_disconnect);
 		free(buff);
 	} else {
 		//uv_close((uv_handle_t*)this->trac.Socket, Client::on_disconnect);
-		uv_shutdown_t req;
-		req.data = this;
-		uv_shutdown(&req, this->socket, Client::on_disconnect);
+		uv_shutdown(shreq, this->socket, Client::on_disconnect);
 		uv_read_stop(this->socket);
 	}
 	return 0;
@@ -135,11 +136,15 @@ int Client::disconnectFromNetwork(){
 void Client::on_disconnect(uv_shutdown_t *req, int status){
 	Client* client = (Client*)req->data;
 	struct sockaddr_storage addr;
-	int size = INET_ADDRSTRLEN;
+	int size = sizeof(struct sockaddr_storage);
 	char str_addr[INET_ADDRSTRLEN];
-	uv_tcp_getpeername((uv_tcp_t*)client->socket, (struct sockaddr*)&addr, &size);
-	uv_ip4_name((struct sockaddr_in*)&addr, str_addr, INET_ADDRSTRLEN);
+	uv_tcp_getpeername((uv_tcp_t*)client->socket, (struct sockaddr*)(&addr), &size);
+	uv_ip4_name((struct sockaddr_in*)(&addr), str_addr, INET_ADDRSTRLEN);
 	log_info("Disconnected from %s", str_addr);
+	uv_close((uv_handle_t*)client->socket, NULL);
+	//log_info("Disconnected from network");
+	free(req);
+	return;
 	//delete client;
 	//uv_thread_detach(uv_thread_self());
 }
@@ -263,9 +268,9 @@ void Client::read(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf){
 			client->trac.complete = true;
 			uv_fs_req_cleanup(&req);
 		} else if(strcmp((char*)pckdata->data, "DISCONNECT OK") == 0){
-			uv_shutdown_t req;
-			req.data = client;
-			uv_shutdown(&req, client->socket, Client::on_disconnect);
+			uv_shutdown_t shreq;
+			shreq.data = client;
+			//uv_shutdown(&shreq, client->socket, Client::on_disconnect);
 			uv_read_stop(client->socket);
 		} else {
 			if(client->trac.file == 0){

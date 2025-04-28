@@ -195,24 +195,26 @@ void Server::pckParser(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf){
 
 		if(strcmp(data->data, "DISCONNECT") == 0){
 			struct sockaddr_storage addr;
-			int size = INET_ADDRSTRLEN;
+			int size = sizeof(struct sockaddr_storage);
 			char str_addr[INET_ADDRSTRLEN];
-			uv_tcp_getpeername((uv_tcp_t*)stream, (struct sockaddr*)&addr, &size);
-			uv_ip4_name((struct sockaddr_in*)&addr, str_addr, INET_ADDRSTRLEN);
+			uv_tcp_getpeername((uv_tcp_t*)stream, (struct sockaddr*)(&addr), &size);
+			uv_ip4_name((struct sockaddr_in*)(&addr), str_addr, INET_ADDRSTRLEN);
 
 			for (Client* client : server->Clientlist){
 				
 				if(strcmp(client->name->c_str(), pck->Name) == 0 || strcmp(client->name->c_str(), str_addr) == 0){
-					char* msg = "DISCONNECT OK";
+					char msg[] = "DISCONNECT OK";
 					struct DATA* buff = (struct DATA*)malloc(sizeof(struct DATA));
 					strcpy(buff->data, msg);
 					buff->tracID = data->tracID;
 					sendPck(stream, Server::write_cb, server->serverName, SPTP_DATA, buff, sizeof(struct DATA)-(MAX_FILESIZE-13));
 					free(buff);
 
-					uv_shutdown_t req;
-					uv_shutdown(&req, stream, NULL);
+					uv_shutdown_t* shreq = (uv_shutdown_t*)malloc(sizeof(uv_shutdown_t));
+					shreq->data = stream;
 					uv_read_stop(stream);
+					uv_shutdown(shreq, stream, Server::on_disconnection);
+					//uv_close((uv_handle_t*)stream, NULL);
 
 					for (auto it = server->Traclist.begin(); it != server->Traclist.end(); ++it) {
 						if(((tracItem*)(*it))->tracID == data->tracID){
@@ -296,4 +298,18 @@ void Server::tracCheck(uv_check_t *handle){
 
 		}
 	}
+}
+
+void Server::on_disconnection(uv_shutdown_t *req, int status){
+	uv_tcp_t* client_stream = (uv_tcp_t*)req->data;
+	struct sockaddr_storage addr;
+	int size = sizeof(struct sockaddr_storage);
+	char str_addr[INET_ADDRSTRLEN];
+	uv_tcp_getpeername(client_stream, (struct sockaddr*)(&addr), &size);
+	uv_ip4_name((struct sockaddr_in*)(&addr), str_addr, INET_ADDRSTRLEN);
+	log_info("Client %s has disconnected from server", str_addr);
+	uv_close((uv_handle_t*)client_stream, NULL);
+	//log_info("Disconnected from network");
+	free(req);
+	return;
 }
