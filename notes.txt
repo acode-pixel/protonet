@@ -29,9 +29,9 @@ use MingW when compiling on windows
 		✅client -> server : client sends an OK message to the server.
 		✅client -> server : both client and server now have a route in which data can be sent and received from one another (with the help of transaction IDs)
 		✅server -> client : server sends an EOF message to the client
-		client -> server : client sneds a request to destroy the path to the server
-		server -> client : server agrees
-		server & client : both server and client delete their transaction ID removing the path of transmission
+		✅client -> server : client sneds a request to destroy the path to the server
+		✅server -> client : server agrees
+		✅server & client : both server and client delete their transaction ID removing the path of transmission
 		END OF OPERATION
 
 	core:
