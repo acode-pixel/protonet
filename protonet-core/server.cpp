@@ -85,6 +85,7 @@ void Server::on_connection(uv_stream_t *stream, int status){
 		uv_ip4_name((struct sockaddr_in*)&addr, str_addr, INET_ADDRSTRLEN);
 		new_client->name = new string(str_addr);
 		new_client->socket = (uv_stream_t*)client_conn;
+		new_client->socket->data = new_client;
 
 		server->Clientlist.push_back(new_client);
         uv_read_start(new_client->socket, Server::alloc_buf, Server::pckParser);
@@ -183,6 +184,8 @@ void Server::pckParser(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf){
 		// send to client lists
 
 		for(Client* client : server->Clientlist){
+			if(client->socket == stream && pckData->hops == 1)
+				client->name->assign(pck->Name);
 			sendPck(client->socket, Server::write_cb, server->serverName, SPTP_TRAC, data, sizeof(struct TRAC));
 		}
 
@@ -211,7 +214,7 @@ void Server::pckParser(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf){
 					free(buff);
 
 					uv_shutdown_t* shreq = (uv_shutdown_t*)malloc(sizeof(uv_shutdown_t));
-					shreq->data = stream;
+					shreq->data = client;
 					uv_read_stop(stream);
 					uv_shutdown(shreq, stream, Server::on_disconnection);
 					//uv_close((uv_handle_t*)stream, NULL);
@@ -224,7 +227,7 @@ void Server::pckParser(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf){
 						}
 					}
 
-					log_info("Disconnecting from %s", (strcmp(client->name->c_str(), pck->Name) == 0) ? pck->Name : str_addr);
+					//log_info("Disconnecting from %s", (strcmp(client->name->c_str(), pck->Name) == 0) ? pck->Name : str_addr);
 				}
 
 			}
@@ -301,15 +304,30 @@ void Server::tracCheck(uv_check_t *handle){
 }
 
 void Server::on_disconnection(uv_shutdown_t *req, int status){
-	uv_tcp_t* client_stream = (uv_tcp_t*)req->data;
-	struct sockaddr_storage addr;
-	int size = sizeof(struct sockaddr_storage);
-	char str_addr[INET_ADDRSTRLEN];
-	uv_tcp_getpeername(client_stream, (struct sockaddr*)(&addr), &size);
-	uv_ip4_name((struct sockaddr_in*)(&addr), str_addr, INET_ADDRSTRLEN);
-	log_info("Client %s has disconnected from server", str_addr);
-	uv_close((uv_handle_t*)client_stream, NULL);
+	Client* client = (Client*)req->data;
+	log_info("Client %s has disconnected from server", client->name->c_str());
+	uv_close((uv_handle_t*)client->socket, Server::on_close);
 	//log_info("Disconnected from network");
 	free(req);
 	return;
+}
+
+void Server::on_close(uv_handle_t *handle){
+	Client* client = (Client*)handle->data;
+	Server* server = (Server*)proto_getServer();
+	free(handle);
+
+	for (auto it = server->Clientlist.begin(); it != server->Clientlist.end(); ++it) {
+		if(((Client*)(*it))->name->compare(*client->name) == 0){
+			server->Clientlist.erase(it);
+			break;
+		}
+	}
+
+	if(client->name != nullptr){
+		delete client->name;
+		client->name == nullptr;
+	}
+	free(client);
+
 }

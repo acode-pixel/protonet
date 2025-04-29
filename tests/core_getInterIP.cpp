@@ -1,7 +1,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <uv.h>
-#include "core.h"
+#include "proto.hpp"
 
 #ifdef __unix__
     #define INTER "lo"

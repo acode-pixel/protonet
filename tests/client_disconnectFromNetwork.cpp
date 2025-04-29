@@ -1,7 +1,5 @@
 #include <stdlib.h>
-#include "core.h"
-#include "client.hpp"
-#include "server.hpp"
+#include "proto.hpp"
 #include <uv.h>
 
 int main(int argc, char** argv){
@@ -50,7 +48,7 @@ int main(int argc, char** argv){
     uv_fs_unlink(client->loop, &req, "./test.txt", NULL);
     uv_fs_req_cleanup(&req);
 
-    if(uv_is_active((uv_handle_t*)client->socket) != 0){
+    if(client->socket != nullptr){
         return -1;
     }
     return 0;

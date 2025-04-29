@@ -1,7 +1,6 @@
 #include <stdlib.h>
 #include <string.h>
-#include "client.hpp"
-#include "core.h"
+#include "proto.hpp"
 
 
 int main(int argc, char** argv){

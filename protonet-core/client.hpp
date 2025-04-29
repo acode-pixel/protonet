@@ -14,6 +14,7 @@ class Client {
     public:
         uv_thread_t tid;
         string* name = new string();
+        string* Servername = new string();
         uv_stream_t* socket;
         uv_timer_t pollTimeout;
 	    int socketMode;
@@ -24,7 +25,7 @@ class Client {
 
         MYLIB_API Client(char* inter, char name[], char* IP, char outpath[]);
         MYLIB_API ~Client();
-        int connectToNetwork(char* IP);
+        MYLIB_API int connectToNetwork(char* IP);
         MYLIB_API int makeFileReq(char File[]);
 	    MYLIB_API int disconnectFromNetwork();
     
@@ -35,6 +36,7 @@ class Client {
         static void read(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf);
         static void threadStart(void* data);
 	    static void on_disconnect(uv_shutdown_t *req, int status);
+        static void on_close(uv_handle_t *handle);
         //bool clientCheckSocket(Client* client);
 
 };

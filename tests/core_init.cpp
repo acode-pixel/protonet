@@ -1,7 +1,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <uv.h>
-#include "core.h"
+#include "proto.hpp"
 
 
 int main(int argc, char** argv){

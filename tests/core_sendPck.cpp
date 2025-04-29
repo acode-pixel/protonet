@@ -1,8 +1,7 @@
 #include <stdlib.h>
 #include <string.h>
-#include "client.hpp"
 #include <uv.h>
-#include "core.h"
+#include "proto.hpp"
 
 
 

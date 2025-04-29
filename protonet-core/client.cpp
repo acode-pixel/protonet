@@ -79,13 +79,19 @@ Client::~Client(){
 	if(uv_loop_alive(this->loop) != 0)
 		uv_stop(this->loop);
 
-	if(this->fileReq != NULL)
+	if(this->fileReq != nullptr)
 		delete this->fileReq;
-	//if(this->outDir != NULL)
-	//	delete this->outDir;
-	if(this->name != NULL)
+		this->fileReq = nullptr;
+	if(this->outDir != nullptr)
+		delete this->outDir;
+		this->outDir = nullptr;
+	if(this->name != nullptr)
 		delete this->name;
-	//free(this->loop);
+		this->name = nullptr;
+	if(this->Servername != nullptr)
+		delete this->Servername;
+		this->Servername = nullptr;
+	free(this->loop);
 }
 
 int Client::connectToNetwork(char* IP){
@@ -140,8 +146,9 @@ void Client::on_disconnect(uv_shutdown_t *req, int status){
 	char str_addr[INET_ADDRSTRLEN];
 	uv_tcp_getpeername((uv_tcp_t*)client->socket, (struct sockaddr*)(&addr), &size);
 	uv_ip4_name((struct sockaddr_in*)(&addr), str_addr, INET_ADDRSTRLEN);
-	log_info("Disconnected from %s", str_addr);
-	uv_close((uv_handle_t*)client->socket, NULL);
+	log_info("Disconnected from %s", (client->Servername->empty()) ? str_addr : client->Servername->c_str());
+	uv_close((uv_handle_t*)client->socket, Client::on_close);
+	//free((uv_handle_t*)client->socket);
 	//log_info("Disconnected from network");
 	free(req);
 	return;
@@ -175,7 +182,7 @@ int Client::makeFileReq(char File[]){
 	strcpy(br->fileReq, File);
 	this->fileReq->assign(File);
 	//this->socketMode = SPTP_BROD;
-	sendPck(this->socket, Client::on_write, (char*)this->name->c_str(), 1, br, 0);
+	sendPck(this->socket, Client::on_write, (char*)this->name->c_str(), 1, br, sizeof(struct BROD) + strlen(File));
 	strcpy(this->trac.fileRequester, this->name->c_str());
 	strcpy(this->trac.fileReq, this->fileReq->c_str());
 
@@ -253,7 +260,8 @@ void Client::read(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf){
 		client->trac.hops = pckdata->hops;
 		client->trac.Socket = (uv_tcp_t*)stream;
 		client->trac.fileSize = pckdata->fileSize;
-		client->trac.tracID = pckdata->tracID;;
+		client->trac.tracID = pckdata->tracID;
+		client->Servername->assign(pck->Name);
 		strcpy((char*)data->data, "OK");
 		sendPck(client->socket, Client::on_write, (char*)client->name->c_str(), SPTP_DATA, data, sizeof(struct DATA)-(MAX_FILESIZE-2));
 		free(data);
@@ -292,6 +300,13 @@ void Client::read(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf){
 	free(buf->base);
 
 
+}
+
+void Client::on_close(uv_handle_t *handle){
+	Client* client = (Client*)handle->data;
+	free(client->socket);
+	client->socket = nullptr;
+	return;
 }
 /*
 bool clientCheckSocket(Client* client){

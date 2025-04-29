@@ -39,6 +39,7 @@ class Server {
 			static void write_cb(uv_write_t *req, int status);
 			static void tracCheck(uv_check_t *handle);
 			static void threadStart(void* data);
+			static void on_close(uv_handle_t *handle);
 
 };
 #endif
