@@ -7,6 +7,9 @@ extern "C" {
 }
 
 #include <string>
+#include <cryptopp/cryptlib.h>
+#include <cryptopp/sha.h>
+#include <cryptopp/hex.h>
 
 using namespace std;
 

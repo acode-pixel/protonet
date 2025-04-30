@@ -8,6 +8,7 @@ class CompressorRecipe(ConanFile):
 
     def requirements(self):
         self.requires("libuv/[*]")
+        self.requires("cryptopp/[*]")
         
     def layout(self):
         # We make the assumption that if the compiler is msvc the

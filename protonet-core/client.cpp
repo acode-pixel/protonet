@@ -270,11 +270,46 @@ void Client::read(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf){
 		// data go brrrrrrrrrrrrrrrr
 		uv_fs_t req;
 		struct DATA* pckdata = (struct DATA*)pck->data;
+		string filepath;
+
 		if(strcmp((char*)pckdata->data, "EOF") == 0){
 			// close open file
 			uv_fs_close(client->loop, &req, client->trac.file, NULL);
 			client->trac.complete = true;
 			uv_fs_req_cleanup(&req);
+			filepath.assign(*client->outDir).append(client->trac.fileReq);
+
+			uv_fs_open(client->loop, &req, filepath.c_str(), O_RDONLY, 0, NULL);
+			int file = req.result;
+			char* data = (char*)malloc(65536);
+			uv_buf_t buf = uv_buf_init(data, 65536);
+			uv_fs_req_cleanup(&req);
+
+			CryptoPP::SHA256 hash;
+			uv_fs_read(client->loop, &req, file, &buf, 1, -1, NULL);
+
+			while(req.result > 0){
+				hash.Update((const CryptoPP::byte*)buf.base, req.result);
+				uv_fs_req_cleanup(&req);
+				uv_fs_read(client->loop, &req, file, &buf, 1, -1, NULL);
+			}
+
+			uv_fs_req_cleanup(&req);
+			uv_fs_close(client->loop, &req, file, NULL);
+			uv_fs_req_cleanup(&req);
+
+			hash.Final((CryptoPP::byte*)&client->trac.hash[0]);
+
+			CryptoPP::HexEncoder encoder;
+			string encoded;
+			encoder.Put(client->trac.hash, sizeof(client->trac.hash));
+			encoder.MessageEnd();
+			encoded.resize(sizeof(client->trac.hash));
+			encoder.Get((CryptoPP::byte*)&encoded[0], encoded.size());
+
+			log_info("Downloaded File hash: %s", encoded.c_str());
+			free(data);
+
 		} else if(strcmp((char*)pckdata->data, "DISCONNECT OK") == 0){
 			uv_shutdown_t shreq;
 			shreq.data = client;
@@ -282,7 +317,6 @@ void Client::read(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf){
 			uv_read_stop(client->socket);
 		} else {
 			if(client->trac.file == 0){
-				string filepath;
 				filepath.assign(*client->outDir).append(client->trac.fileReq);
 				uv_fs_open(client->loop, &req, filepath.c_str(), O_CREAT | O_RDWR, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH, NULL);
 				client->trac.file = req.result;
