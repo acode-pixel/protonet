@@ -8,6 +8,7 @@ extern "C" {
 	#include "log.h"
 }
 #include "client.hpp"
+#include "utils.hpp"
 #include "vector"
 #include "string"
 

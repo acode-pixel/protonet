@@ -231,6 +231,23 @@ void Server::pckParser(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf){
 				}
 
 			}
+		} else if(strcmp(data->data, "VERIFY") == 0) {
+			for (tracItem* trac : server->Traclist){
+				if(strcmp(pck->Name, trac->fileRequester) == 0 && data->tracID == trac->tracID && trac->complete){
+					getFileHashSHA256(trac->fileReq, server->loop, trac->hash);
+					struct DATA* data2 = (struct DATA*)malloc(sizeof(struct DATA));
+					if(memcmp(trac->hash, data->data+7, 32) == 0){
+						data2->tracID = trac->tracID;
+						strcpy(data2->data, "VERIFIED");
+						sendPck((uv_stream_t*)trac->Socket, Server::write_cb, server->serverName, SPTP_DATA, data2, sizeof(struct DATA)-(MAX_FILESIZE - 8));
+					} else {
+						data2->tracID = trac->tracID;
+						strcpy(data2->data, "NOT VERIFIED");
+						sendPck((uv_stream_t*)trac->Socket, Server::write_cb, server->serverName, SPTP_DATA, data2, sizeof(struct DATA)-(MAX_FILESIZE - 12));
+					}
+					free(data2);
+				}
+			}
 		} else {
 			for (tracItem* trac : server->Traclist){
 				if(strcmp(pck->Name, trac->fileRequester) == 0 && data->tracID == trac->tracID){
