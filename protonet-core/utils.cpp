@@ -40,3 +40,13 @@ int getFileHashSHA256(char* filepath, uv_loop_t* loop, void* out){
 	encoder.Get((CryptoPP::byte*)&encoded[0], encoded.size());*/
     
 }
+
+void getHex(void* hex, int size, char* out){
+	CryptoPP::HexEncoder encoder;
+	string encoded;
+	encoder.Put((CryptoPP::byte*)hex, size);
+	encoder.MessageEnd();
+	encoded.resize(size*2);
+	encoder.Get((CryptoPP::byte*)&encoded[0], encoded.size());
+	strcpy(out, encoded.c_str());
+}

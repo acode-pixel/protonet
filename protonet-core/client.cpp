@@ -8,8 +8,8 @@ Client:: Client(char* inter, char name[], char* IP, char outpath[]){
 	addr = getInterIP(inter);
 	log_info("Client IP: %s", inet_ntoa(addr.address.address4.sin_addr));
 
-	if (name == NULL || strlen(name) >= 255){
-		(strlen(name) >= 255) ? log_info("Note: Name should be less than 255.") : (void)NULL;
+	if (name == NULL || strlen(name) >= MAX_NAMESIZE){
+		(strlen(name) >= 255) ? log_info("Note: Name should be less than %d.", MAX_NAMESIZE) : (void)NULL;
 		char str_addr[INET_ADDRSTRLEN];
 		uv_ip4_name(&addr.address.address4, str_addr, INET_ADDRSTRLEN);
 		this->name->assign(str_addr);
@@ -48,6 +48,7 @@ Client:: Client(char* inter, char name[], char* IP, char outpath[]){
 		} else {
 			uv_timer_init(this->loop, &this->pollTimeout);
 			uv_timer_start(&this->pollTimeout, NOP, 200, 200);
+			uv_barrier_init(&this->barrier, 2);
 			log_info("Successfully created Client");
 			memset(&this->trac, 0, sizeof(tracItem));
 			uv_thread_create(&this->tid, Client::threadStart, this);
@@ -128,7 +129,7 @@ int Client::disconnectFromNetwork(){
 		struct DATA* buff = (struct DATA*)malloc(sizeof(struct DATA));
 		strcpy(buff->data, data);
 		buff->tracID = this->trac.tracID;
-        sendPck((uv_stream_t*)this->trac.Socket, Client::on_write, (char*)this->name->c_str(), SPTP_DATA, buff, sizeof(struct DATA)-(MAX_FILESIZE-10));
+        sendPck((uv_stream_t*)this->trac.Socket, Client::on_write, (char*)this->name->c_str(), SPTP_DATA, buff, sizeof(struct DATA)-(MAX_DATASIZE-10));
 		uv_shutdown(shreq, this->socket, Client::on_disconnect);
 		free(buff);
 	} else {
@@ -185,6 +186,7 @@ int Client::makeFileReq(char File[]){
 	sendPck(this->socket, Client::on_write, (char*)this->name->c_str(), 1, br, sizeof(struct BROD) + strlen(File));
 	strcpy(this->trac.fileRequester, this->name->c_str());
 	strcpy(this->trac.fileReq, this->fileReq->c_str());
+	uv_barrier_wait(&this->barrier);
 
 	//fillTracItem(&this->trac, 0, this->name, 0, 0, NULL, this->name);
 	free(br);
@@ -262,9 +264,11 @@ void Client::read(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf){
 		client->trac.fileSize = pckdata->fileSize;
 		client->trac.tracID = pckdata->tracID;
 		client->Servername->assign(pck->Name);
+		client->socketMode = SPTP_TRAC;
 		strcpy((char*)data->data, "OK");
-		sendPck(client->socket, Client::on_write, (char*)client->name->c_str(), SPTP_DATA, data, sizeof(struct DATA)-(MAX_FILESIZE-2));
+		sendPck(client->socket, Client::on_write, (char*)client->name->c_str(), SPTP_DATA, data, sizeof(struct DATA)-(MAX_DATASIZE-2));
 		free(data);
+		log_info("Downloading %s (size=%d bytes)", client->trac.fileReq, client->trac.fileSize);
 		
 	} else if(pck->Mode == SPTP_DATA){
 		// data go brrrrrrrrrrrrrrrr
@@ -302,14 +306,16 @@ void Client::read(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf){
 
 			getFileHashSHA256((char*)filepath.c_str(), client->loop, client->trac.hash);
 
-			CryptoPP::HexEncoder encoder;
+			/*CryptoPP::HexEncoder encoder;
 			string encoded;
 			encoder.Put(client->trac.hash, sizeof(client->trac.hash));
 			encoder.MessageEnd();
 			encoded.resize(sizeof(client->trac.hash)*2);
-			encoder.Get((CryptoPP::byte*)&encoded[0], encoded.size());
+			encoder.Get((CryptoPP::byte*)&encoded[0], encoded.size());*/
+			char encoded[sizeof(client->trac.hash)*2];
+			getHex(client->trac.hash, sizeof(client->trac.hash), encoded);
 
-			log_info("Downloaded File hash: %s", encoded.c_str());
+			log_info("Downloaded File hash: %s", encoded);
 			//free(data);
 
 			struct DATA* data2 = (struct DATA*)malloc(sizeof(struct DATA));
@@ -317,7 +323,7 @@ void Client::read(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf){
 			data2->tracID = client->trac.tracID;
 			memcpy(data2->data, "VERIFY", 6);
 			memcpy(data2->data+7, client->trac.hash, 32);
-			sendPck(stream, Client::on_write, (char*)client->name->c_str(), SPTP_DATA, data2, sizeof(struct DATA) - (MAX_FILESIZE - 39));
+			sendPck(stream, Client::on_write, (char*)client->name->c_str(), SPTP_DATA, data2, sizeof(struct DATA) - (MAX_DATASIZE - 39));
 			free(data2);
 
 		} else if(strcmp((char*)pckdata->data, "DISCONNECT OK") == 0){
@@ -325,7 +331,16 @@ void Client::read(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf){
 			shreq.data = client;
 			//uv_shutdown(&shreq, client->socket, Client::on_disconnect);
 			uv_read_stop(client->socket);
-		} else {
+		} else if(strcmp((char*)pckdata->data, "VERIFIED") == 0){
+			log_info("File %s is verified", client->trac.fileReq);
+			uv_barrier_wait(&client->barrier);
+		} else if(strcmp((char*)pckdata->data, "NOT VERIFIED") == 0){
+			filepath.assign(*client->outDir).append(client->trac.fileReq);
+			log_info("File %s is not verified, deleting file", client->trac.fileReq);
+			uv_fs_unlink(client->loop, &req, filepath.c_str(), NULL);
+			uv_barrier_wait(&client->barrier);
+
+		}else {
 			if(client->trac.file == 0){
 				filepath.assign(*client->outDir).append(client->trac.fileReq);
 				uv_fs_open(client->loop, &req, filepath.c_str(), O_CREAT | O_RDWR, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH, NULL);
@@ -336,6 +351,7 @@ void Client::read(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf){
 			uv_buf_t buff = uv_buf_init((char*)pckdata->data, pck->datalen-5);
 			uv_fs_write(client->loop, &req, client->trac.file, &buff, 1, client->trac.fileOffset, NULL);
 			uv_fs_req_cleanup(&req);
+			client->trac.fileOffset += pck->datalen-5;
 		}
 
 

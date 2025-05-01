@@ -7,6 +7,12 @@ extern "C" {
 	#include "core.h"
 	#include "log.h"
 }
+
+// added due to vscode c Intelisense not detecting __FILE_NAME__
+#ifndef __FILE_NAME__
+#define __FILE_NAME__ "server.cpp"
+#endif
+
 #include "client.hpp"
 #include "utils.hpp"
 #include "vector"

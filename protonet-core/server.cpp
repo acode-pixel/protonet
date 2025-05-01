@@ -210,7 +210,7 @@ void Server::pckParser(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf){
 					struct DATA* buff = (struct DATA*)malloc(sizeof(struct DATA));
 					strcpy(buff->data, msg);
 					buff->tracID = data->tracID;
-					sendPck(stream, Server::write_cb, server->serverName, SPTP_DATA, buff, sizeof(struct DATA)-(MAX_FILESIZE-13));
+					sendPck(stream, Server::write_cb, server->serverName, SPTP_DATA, buff, sizeof(struct DATA)-(MAX_DATASIZE-13));
 					free(buff);
 
 					uv_shutdown_t* shreq = (uv_shutdown_t*)malloc(sizeof(uv_shutdown_t));
@@ -239,11 +239,12 @@ void Server::pckParser(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf){
 					if(memcmp(trac->hash, data->data+7, 32) == 0){
 						data2->tracID = trac->tracID;
 						strcpy(data2->data, "VERIFIED");
-						sendPck((uv_stream_t*)trac->Socket, Server::write_cb, server->serverName, SPTP_DATA, data2, sizeof(struct DATA)-(MAX_FILESIZE - 8));
+						sendPck((uv_stream_t*)trac->Socket, Server::write_cb, server->serverName, SPTP_DATA, data2, sizeof(struct DATA)-(MAX_DATASIZE - 8));
 					} else {
 						data2->tracID = trac->tracID;
 						strcpy(data2->data, "NOT VERIFIED");
-						sendPck((uv_stream_t*)trac->Socket, Server::write_cb, server->serverName, SPTP_DATA, data2, sizeof(struct DATA)-(MAX_FILESIZE - 12));
+						sendPck((uv_stream_t*)trac->Socket, Server::write_cb, server->serverName, SPTP_DATA, data2, sizeof(struct DATA)-(MAX_DATASIZE - 12));
+						log_debug("Failed hash for %s", trac->fileReq);
 					}
 					free(data2);
 				}
@@ -297,7 +298,7 @@ void Server::tracCheck(uv_check_t *handle){
 			struct DATA* data = (struct DATA*)malloc(sizeof(struct DATA));
 			memset(data, 0, sizeof(struct DATA));
 			data->tracID = trac->tracID;
-			uv_buf_t buff = uv_buf_init((char*)data->data, MAX_FILESIZE);
+			uv_buf_t buff = uv_buf_init((char*)data->data, MAX_DATASIZE);
 			uv_fs_read(serv->loop, &req, trac->file, &buff, 1, -1, NULL);
 
 			if(req.result < 0){
@@ -311,7 +312,7 @@ void Server::tracCheck(uv_check_t *handle){
 				sendPck((uv_stream_t*)trac->Socket, Server::write_cb, serv->serverName, SPTP_DATA, data, 7);
 			} else {
 				trac->fileOffset += req.result;
-				sendPck((uv_stream_t*)trac->Socket, Server::write_cb, serv->serverName, SPTP_DATA, data, sizeof(struct DATA)-(MAX_FILESIZE-req.result));
+				sendPck((uv_stream_t*)trac->Socket, Server::write_cb, serv->serverName, SPTP_DATA, data, sizeof(struct DATA)-(MAX_DATASIZE-req.result));
 			} 
 			uv_fs_req_cleanup(&req);
 			free(data);

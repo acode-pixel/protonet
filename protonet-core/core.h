@@ -33,7 +33,17 @@ extern "C" {
 
 #define C_PORT 5657
 #define S_PORT 5657
-#define MAX_FILESIZE 14000
+#define MAX_NAMESIZE 16
+typedef struct Packet {
+	char Proto[4];
+	char Name[MAX_NAMESIZE];
+	uint8_t Mode;
+	uint32_t datalen;
+
+	uint8_t data[];
+} Packet;
+
+#define MAX_DATASIZE 65256 - (sizeof(Packet))
 
 typedef unsigned int uint;
 
@@ -44,7 +54,7 @@ struct BROD {
 
 struct DATA {
 	uint tracID;
-	char data[MAX_FILESIZE];
+	char data[MAX_DATASIZE];
 };
 
 struct TRAC {
@@ -52,13 +62,13 @@ struct TRAC {
 	uint8_t hops;
 	uint8_t lifetime;
 	size_t fileSize;
-	char Name[12]; // Name of the file requester
+	char Name[MAX_NAMESIZE]; // Name of the file requester
 };
 
 typedef struct tracItem {
 	uint tracID; 		// transaction ID
 	uint8_t deleted;	// transaction is deleted
-	char fileRequester[255]; // Name of file requester
+	char fileRequester[MAX_NAMESIZE]; // Name of file requester
 	uv_tcp_t* Socket; // Socket to file requester
 	uint socketStatus; // status of socket 
 	uv_file file; // fd to requested file (if trac is confirmed)
@@ -73,15 +83,6 @@ typedef struct tracItem {
 	uint8_t hash[32];
 
 } tracItem;
-
-typedef struct Packet {
-	char Proto[4];
-	char Name[12];
-	uint8_t Mode;
-	uint32_t datalen;
-
-	uint8_t data[];
-} Packet;
 
 typedef struct Protonet {
 	bool isUp;

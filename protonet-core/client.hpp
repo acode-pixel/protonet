@@ -9,6 +9,11 @@ extern "C" {
 #include <string>
 #include "utils.hpp"
 
+// added due to vscode c Intelisense not detecting __FILE_NAME__
+#ifndef __FILE_NAME__
+#define __FILE_NAME__ "client.cpp"
+#endif
+
 using namespace std;
 
 class Client {
@@ -18,6 +23,7 @@ class Client {
         string* Servername = new string();
         uv_stream_t* socket;
         uv_timer_t pollTimeout;
+        uv_barrier_t barrier;
 	    int socketMode;
 	    tracItem trac;
 	    string* fileReq = new string();
