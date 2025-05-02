@@ -84,8 +84,8 @@ uv_interface_address_t getInterIP(char interface_name[]){
 int sendPck(/*int fd*/ uv_stream_t* stream_tcp, uv_write_cb write_cb, char* Name, uint8_t Mode, void* data, uint size){
 	Packet* pck = NULL; // free this
 	uint pckSize =  (size == 0) ? strlen(data) : size;
-	pck = (Packet*) malloc(sizeof(Packet) + pckSize+1);
-	memset(pck, 0, sizeof(Packet) + pckSize+1);
+	pck = (Packet*) malloc(sizeof(Packet) + pckSize);
+	memset(pck, 0, sizeof(Packet) + pckSize);
 	memcpy(pck->Proto, "SPTP", 4);
 	strcpy(pck->Name, Name);
 	pck->Mode = Mode;
@@ -98,7 +98,7 @@ int sendPck(/*int fd*/ uv_stream_t* stream_tcp, uv_write_cb write_cb, char* Name
 	}*/
 	
 	memcpy(pck->data, data, pckSize);
-	pck->datalen = pckSize+1;
+	pck->datalen = pckSize;
 
 	/*if (send(fd, pck, sizeof(*pck) + pckSize+1, 0) == -1){
 		perror("Falied to send Pck");

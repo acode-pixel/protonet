@@ -40,6 +40,7 @@ int main(int argc, char** argv){
     #endif
 
     client->makeFileReq("test.txt");
+
     //uv_sleep(9000);
     uv_fs_access(client->loop, &req, "./test_dir/test.txt", F_OK, NULL);
 

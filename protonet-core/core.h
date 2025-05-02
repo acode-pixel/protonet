@@ -43,7 +43,8 @@ typedef struct Packet {
 	uint8_t data[];
 } Packet;
 
-#define MAX_DATASIZE 64000 - (sizeof(Packet))
+#define MAX_DATASIZE 60000 - (sizeof(Packet))
+#define MAX_FILESIZE sizeof(uint)*MAX_DATASIZE
 
 typedef unsigned int uint;
 
@@ -54,6 +55,7 @@ struct BROD {
 
 struct DATA {
 	uint tracID;
+	uint id;
 	char data[MAX_DATASIZE];
 };
 
@@ -75,12 +77,16 @@ typedef struct tracItem {
 	uint fileSize; // size of file requested
 	uint8_t hops; 		// hops between client and server from initial BROD packet
 	uint8_t lifetime; 	// calculated lifetime of packet from hops
-	int fileOffset; 	// current file offset
+	uint fileOffset; 	// current file offset
 	bool confirmed; 	// if transaction id is confirmed
 	bool complete;		// if transaction is complete
 	bool canDelete;	// if transaction can be deleted
 	char fileReq[255]; 	// file requested
 	uint8_t hash[32];
+	bool readAgain;
+	uint readExtra; // if packet is split
+	uint total_transmitted; 
+	uint total_received;
 
 } tracItem;
 

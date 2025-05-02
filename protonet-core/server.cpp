@@ -196,7 +196,7 @@ void Server::pckParser(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf){
 		//  handle disconnect when were client/server hybrid
 		struct DATA* data = (struct DATA*)pck->data;
 
-		if(strcmp(data->data, "DISCONNECT") == 0){
+		if(strncmp(data->data, "DISCONNECT", 10) == 0){
 			struct sockaddr_storage addr;
 			int size = sizeof(struct sockaddr_storage);
 			char str_addr[INET_ADDRSTRLEN];
@@ -231,7 +231,7 @@ void Server::pckParser(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf){
 				}
 
 			}
-		} else if(strcmp(data->data, "VERIFY") == 0) {
+		} else if(strncmp(data->data, "VERIFY", 6) == 0) {
 			for (tracItem* trac : server->Traclist){
 				if(strcmp(pck->Name, trac->fileRequester) == 0 && data->tracID == trac->tracID && trac->complete){
 					getFileHashSHA256(trac->fileReq, server->loop, trac->hash);
@@ -252,7 +252,7 @@ void Server::pckParser(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf){
 		} else {
 			for (tracItem* trac : server->Traclist){
 				if(strcmp(pck->Name, trac->fileRequester) == 0 && data->tracID == trac->tracID){
-					if(strcmp((char*)data->data, "OK") == 0){
+					if(strncmp((char*)data->data, "OK", 2) == 0){
 						trac->confirmed = true;
 						trac->Socket = (uv_tcp_t*)stream;
 						trac->socketStatus = SPTP_DATA;
@@ -299,7 +299,7 @@ void Server::tracCheck(uv_check_t *handle){
 			memset(data, 0, sizeof(struct DATA));
 			data->tracID = trac->tracID;
 			uv_buf_t buff = uv_buf_init((char*)data->data, MAX_DATASIZE);
-			uv_fs_read(serv->loop, &req, trac->file, &buff, 1, -1, NULL);
+			uv_fs_read(serv->loop, &req, trac->file, &buff, 1, trac->fileOffset, NULL);
 
 			if(req.result < 0){
 				log_error("Server failed to read requested file %s.[%s]", trac->fileReq, uv_err_name(req.result));
@@ -309,9 +309,11 @@ void Server::tracCheck(uv_check_t *handle){
 				uv_fs_close(serv->loop, &req, trac->file, NULL);
 				trac->complete = true;
 				strcpy((char*)data->data, "EOF");
-				sendPck((uv_stream_t*)trac->Socket, Server::write_cb, serv->serverName, SPTP_DATA, data, 7);
+				sendPck((uv_stream_t*)trac->Socket, Server::write_cb, serv->serverName, SPTP_DATA, data, sizeof(struct DATA)-(MAX_DATASIZE-3));
 			} else {
 				trac->fileOffset += req.result;
+				trac->total_transmitted += 1;
+				data->id = trac->total_transmitted;
 				sendPck((uv_stream_t*)trac->Socket, Server::write_cb, serv->serverName, SPTP_DATA, data, sizeof(struct DATA)-(MAX_DATASIZE-req.result));
 			} 
 			uv_fs_req_cleanup(&req);

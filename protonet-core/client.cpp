@@ -177,6 +177,8 @@ int Client::makeFileReq(char File[]){
 		log_error("[File name too long]");
 		return -1;
 	}
+	uv_timespec64_t past, future;
+    uv_clock_gettime(UV_CLOCK_MONOTONIC, &past);
 	struct BROD* br = (struct BROD*)malloc(sizeof(struct BROD) + strlen(File)+1);
 	memset(br, 0, sizeof(struct BROD) + strlen(File)+1);
 	br->hops = 0x01;
@@ -187,7 +189,8 @@ int Client::makeFileReq(char File[]){
 	strcpy(this->trac.fileRequester, this->name->c_str());
 	strcpy(this->trac.fileReq, this->fileReq->c_str());
 	uv_barrier_wait(&this->barrier);
-
+	uv_clock_gettime(UV_CLOCK_MONOTONIC, &future);
+	log_info("Completed request in %ld.%us", (future.tv_sec - past.tv_sec), (future.tv_nsec - past.tv_nsec));
 	//fillTracItem(&this->trac, 0, this->name, 0, 0, NULL, this->name);
 	free(br);
 	return 0;
@@ -270,13 +273,13 @@ void Client::read(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf){
 		free(data);
 		log_info("Downloading %s (size=%d bytes)", client->trac.fileReq, client->trac.fileSize);
 		
-	} else if(pck->Mode == SPTP_DATA){
+	} else if(pck->Mode == SPTP_DATA || client->trac.readAgain){
 		// data go brrrrrrrrrrrrrrrr
 		uv_fs_t req;
 		struct DATA* pckdata = (struct DATA*)pck->data;
 		string filepath;
 
-		if(strcmp((char*)pckdata->data, "EOF") == 0){
+		if(strncmp((char*)pckdata->data, "EOF", 3) == 0){
 			// close open file
 			uv_fs_close(client->loop, &req, client->trac.file, NULL);
 			client->trac.complete = true;
@@ -326,15 +329,15 @@ void Client::read(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf){
 			sendPck(stream, Client::on_write, (char*)client->name->c_str(), SPTP_DATA, data2, sizeof(struct DATA) - (MAX_DATASIZE - 39));
 			free(data2);
 
-		} else if(strcmp((char*)pckdata->data, "DISCONNECT OK") == 0){
+		} else if(strncmp((char*)pckdata->data, "DISCONNECT OK", 13) == 0){
 			uv_shutdown_t shreq;
 			shreq.data = client;
 			//uv_shutdown(&shreq, client->socket, Client::on_disconnect);
 			uv_read_stop(client->socket);
-		} else if(strcmp((char*)pckdata->data, "VERIFIED") == 0){
+		} else if(strncmp((char*)pckdata->data, "VERIFIED", 8) == 0){
 			log_info("File %s is verified", client->trac.fileReq);
 			uv_barrier_wait(&client->barrier);
-		} else if(strcmp((char*)pckdata->data, "NOT VERIFIED") == 0){
+		} else if(strncmp((char*)pckdata->data, "NOT VERIFIED", 12) == 0){
 			filepath.assign(*client->outDir).append(client->trac.fileReq);
 			log_info("File %s is not verified, deleting file", client->trac.fileReq);
 			uv_fs_unlink(client->loop, &req, filepath.c_str(), NULL);
@@ -348,13 +351,30 @@ void Client::read(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf){
 				uv_fs_req_cleanup(&req);
 			}
 
-			uv_buf_t buff = uv_buf_init((char*)pckdata->data, pck->datalen-5);
-			uv_fs_write(client->loop, &req, client->trac.file, &buff, 1, client->trac.fileOffset, NULL);
-			uv_fs_req_cleanup(&req);
-			client->trac.fileOffset += pck->datalen-5;
+			if(client->trac.readAgain){
+				uv_buf_t buff = uv_buf_init(buf->base, client->trac.readExtra);
+				uv_fs_write(client->loop, &req, client->trac.file, &buff, 1, client->trac.fileOffset, NULL);
+				uv_fs_req_cleanup(&req);
+				client->trac.readExtra -= nread;
+				client->trac.fileOffset += nread;
+				if(client->trac.readExtra == 0){
+					client->trac.readAgain = false;
+				}
+			} else if(pck->datalen-8 > nread){
+				uv_buf_t buff = uv_buf_init((char*)pckdata->data, nread-(sizeof(Packet)+8));
+				uv_fs_write(client->loop, &req, client->trac.file, &buff, 1, client->trac.fileOffset, NULL);
+				uv_fs_req_cleanup(&req);
+				client->trac.fileOffset += nread-(sizeof(Packet)+8);
+				client->trac.readAgain = true;
+				client->trac.readExtra = (pck->datalen-8) - (nread-(sizeof(Packet)+8));
+			} else {
+				uv_buf_t buff = uv_buf_init((char*)pckdata->data, pck->datalen-8);
+				uv_fs_write(client->loop, &req, client->trac.file, &buff, 1, client->trac.fileOffset, NULL);
+				uv_fs_req_cleanup(&req);
+				client->trac.fileOffset += pck->datalen-8;
+			}
+			client->trac.total_received += 1;
 		}
-
-
 	}
 
 	free(buf->base);
