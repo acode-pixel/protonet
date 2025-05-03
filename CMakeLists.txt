@@ -1,4 +1,6 @@
 cmake_minimum_required(VERSION 3.25.1)
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED True)
 enable_testing()
 
 project("protonet")
@@ -8,3 +10,5 @@ include_directories(${libuv_INCLUDE_DIR} ${cryptopp_INCLUDE_DIRS})
 
 add_subdirectory(protonet-core)
 add_subdirectory(tests)
+
+#set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/License.txt")

@@ -43,7 +43,7 @@ typedef struct Packet {
 	uint8_t data[];
 } Packet;
 
-#define MAX_DATASIZE 60000 - (sizeof(Packet))
+#define MAX_DATASIZE 60000
 #define MAX_FILESIZE sizeof(uint)*MAX_DATASIZE
 
 typedef unsigned int uint;
