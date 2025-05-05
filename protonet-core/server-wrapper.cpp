@@ -1,5 +1,5 @@
-#include "server.hpp"
-#include "server-wrapper.h"
+#include "./proto/server.hpp"
+#include "./proto/server-wrapper.h"
 
 void* Server_new(char* inter, char* serverName, char Dir[], char* peerIp) {
     return new Server(inter, serverName, Dir, peerIp);

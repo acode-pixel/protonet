@@ -1,4 +1,4 @@
-#include "utils.hpp"
+#include "./proto/utils.hpp"
 
 int getFileHashSHA256(char* filepath, uv_loop_t* loop, void* out){
     uv_fs_t req;

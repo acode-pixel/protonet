@@ -1,4 +1,4 @@
-#include "client.hpp"
+#include "./proto/client.hpp"
 // make client name random letters not ip
 
 Client:: Client(char* inter, char name[], char* IP, char outpath[]){

@@ -1,5 +1,5 @@
 #include <stdlib.h>
-#include "proto.hpp"
+#include "proto/proto.hpp"
 #include <uv.h>
 
 int main(int argc, char** argv){

@@ -1,4 +1,4 @@
-#include "server.hpp"
+#include "./proto/server.hpp"
 
 Server::Server(char* inter, char* serverName, char Dir[], char* peerIp){
 	uv_interface_address_t addr = getInterIP(inter);

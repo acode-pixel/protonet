@@ -1,5 +1,5 @@
-#include "client.hpp"
-#include "client-wrapper.h"
+#include "./proto/client.hpp"
+#include "./proto/client-wrapper.h"
 
 void* Client_new(char* inter, char name[], char* IP, char outpath[]) {
     return new Client(inter, name, IP, outpath);

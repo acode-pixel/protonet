@@ -1,4 +1,4 @@
-#include "core.h"
+#include "./proto/core.h"
 
 FILE* flog;
 Protonet* _p;
@@ -35,7 +35,7 @@ Protonet* Init(void){
 		return((Protonet*)-1);
 	}
 
-	log_add_fp(flog, LOG_INFO);
+	log_add_fp(flog, LOG_TRACE);
 	uv_mutex_init_recursive(&logLock);
 	log_set_lock(logLocker, NULL);
 	log_add_callback(failCallback, NULL, LOG_FATAL);

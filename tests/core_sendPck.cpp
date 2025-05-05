@@ -1,7 +1,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <uv.h>
-#include "proto.hpp"
+#include "proto/proto.hpp"
 
 
 
