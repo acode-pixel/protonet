@@ -8,6 +8,8 @@ find_package(libuv CONFIG REQUIRED)
 find_package(cryptopp CONFIG REQUIRED)
 include_directories(${libuv_INCLUDE_DIR} ${cryptopp_INCLUDE_DIRS})
 
+set(CPACK_INSTALL_CMAKE_PROJECTS "${PROJECT_BINARY_DIR};protonet-core;ALL;/")
+
 add_subdirectory(protonet-core)
 add_subdirectory(tests)
 
