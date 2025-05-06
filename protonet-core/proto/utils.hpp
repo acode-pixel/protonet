@@ -1,15 +1,12 @@
 #ifndef UTILS_H
 #define UTILS_H
 
+#include <string>
+
 extern "C" {
     #include "./log.h"
 }
 
-#include <uv.h>
-#include <string>
-#include <cryptopp/cryptlib.h>
-#include <cryptopp/sha.h>
-#include <cryptopp/hex.h>
 
 using namespace std;
 

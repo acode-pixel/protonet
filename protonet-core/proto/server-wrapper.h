@@ -3,10 +3,8 @@
 
 #ifdef __cplusplus
 extern "C" {
-    #include <uv.h>
-#else
-    #include <uv.h>
 #endif
+
 void* Server_new(char* inter, char* serverName, char Dir[], char* peerIp);           // Create a new MyClass object
 void Server_delete(void* server); // Call printMessage method
 

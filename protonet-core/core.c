@@ -1,3 +1,4 @@
+#include <uv.h>
 #include "./proto/core.h"
 
 FILE* flog;

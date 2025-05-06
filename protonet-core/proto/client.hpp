@@ -7,7 +7,7 @@ extern "C" {
 }
 
 #include <string>
-#include "utils.hpp"
+#include "./utils.hpp"
 
 // added due to vscode c Intelisense not detecting __FILE_NAME__
 #ifndef __FILE_NAME__

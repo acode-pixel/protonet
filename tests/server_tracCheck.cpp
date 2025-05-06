@@ -1,6 +1,6 @@
 #include <stdlib.h>
-#include "proto/proto.hpp"
 #include <uv.h>
+#include "proto/proto.hpp"
 
 int main(int argc, char** argv){
     Protonet* p = Init();

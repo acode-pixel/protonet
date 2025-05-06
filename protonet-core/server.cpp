@@ -1,3 +1,4 @@
+#include <uv.h>
 #include "./proto/server.hpp"
 
 Server::Server(char* inter, char* serverName, char Dir[], char* peerIp){

@@ -1,3 +1,4 @@
+#include <uv.h>
 #include "./proto/client.hpp"
 #include "./proto/client-wrapper.h"
 

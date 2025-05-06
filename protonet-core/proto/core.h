@@ -25,7 +25,6 @@ extern "C" {
 #include "./log.h"
 #include "./client-wrapper.h"
 #include "./server-wrapper.h"
-#include <uv.h>
 
 #define SPTP_BROD 1
 #define SPTP_TRAC 2

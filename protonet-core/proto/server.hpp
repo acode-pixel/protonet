@@ -4,8 +4,8 @@
 #define DEFAULT_TRAC_LIFETIME 10
 
 extern "C" {
-	#include "core.h"
-	#include "log.h"
+	#include "./core.h"
+	#include "./log.h"
 }
 
 // added due to vscode c Intelisense not detecting __FILE_NAME__
@@ -13,10 +13,10 @@ extern "C" {
 #define __FILE_NAME__ "server.cpp"
 #endif
 
-#include "client.hpp"
-#include "utils.hpp"
-#include "vector"
-#include "string"
+#include "./client.hpp"
+#include "./utils.hpp"
+#include <vector>
+#include <string>
 
 using namespace std; 
 

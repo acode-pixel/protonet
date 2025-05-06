@@ -1,3 +1,7 @@
+#include <uv.h>
+#include <cryptopp/cryptlib.h>
+#include <cryptopp/sha.h>
+#include <cryptopp/hex.h>
 #include "./proto/utils.hpp"
 
 int getFileHashSHA256(char* filepath, uv_loop_t* loop, void* out){

@@ -1,22 +1,45 @@
 from conan import ConanFile
+from conan.tools.cmake import CMakeToolchain, CMake, cmake_layout, CMakeDeps
 import os
 
 
-class CompressorRecipe(ConanFile):
+class libprotoRecipe(ConanFile):
     settings = "os", "compiler", "build_type", "arch"
-    generators = "CMakeToolchain", "CMakeDeps"
+    name = "proto"
 
     def requirements(self):
-        self.requires("libuv/[*]")
-        self.requires("cryptopp/[*]")
+        self.requires("libuv/[>=1.49.2]")
+        self.requires("cryptopp/[>=8.9.0]")
+        #self.requires("libsodium/[*]")
+        
+    def build_requirements(self):
+        self.tool_requires("cmake/[>=3.28.3]")
+        
+    def generate(self):
+        deps = CMakeDeps(self)
+        deps.generate()
+        tc = CMakeToolchain(self)
+        tc.generate()
+        
+    def build(self):
+        cmake = CMake(self)
+        cmake.configure()
+        cmake.build()
         
     def layout(self):
-        # We make the assumption that if the compiler is msvc the
-        # CMake generator is multi-config
-        multi = True if self.settings.get_safe("compiler") == "msvc" else False
-        if multi:
-            self.folders.generators = os.path.join("build", "generators")
-            self.folders.build = "build"
-        else:
-            self.folders.generators = os.path.join("build", str(self.settings.build_type), "generators")
-            self.folders.build = os.path.join("build", str(self.settings.build_type))
+        #self.folders.generators = os.path.join("build", str(self.settings.build_type), "generators")
+        #self.folders.build = os.path.join("build", str(self.settings.build_type))
+        cmake_layout(self)
+        
+    def package(self):
+        cmake = CMake(self)
+        cmake.install()
+        
+    def package_info(self):
+        if self.settings.build_type != "Debug":
+            self.cpp_info.system_libs = ["libuv"]
+        self.cpp_info.libs = ["proto"]
+    
+    def validate(self):
+        if self.settings.os == "Android":
+            raise ConanInvalidConfiguration("Android not supported")

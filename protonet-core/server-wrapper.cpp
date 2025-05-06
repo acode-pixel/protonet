@@ -1,3 +1,4 @@
+#include <uv.h>
 #include "./proto/server.hpp"
 #include "./proto/server-wrapper.h"
 

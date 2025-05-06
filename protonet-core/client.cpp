@@ -1,3 +1,4 @@
+#include <uv.h>
 #include "./proto/client.hpp"
 // make client name random letters not ip
 
