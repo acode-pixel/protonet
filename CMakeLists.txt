@@ -6,6 +6,7 @@ enable_testing()
 project("protonet")
 find_package(libuv CONFIG REQUIRED)
 find_package(cryptopp CONFIG REQUIRED)
+find_package(libsodium CONFIG REQUIRED)
 include_directories(${libuv_INCLUDE_DIR} ${cryptopp_INCLUDE_DIRS})
 
 set(CPACK_INSTALL_CMAKE_PROJECTS "${PROJECT_BINARY_DIR};protonet-core;ALL;/")

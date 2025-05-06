@@ -19,7 +19,7 @@ test-linux-Release:
     - source .venv/bin/activate
     - pip install conan
     - conan profile detect --force
-    - conan install . --build=libuv/1.49.2 --build=cryptopp/8.9.0 -o libuv/*:shared=True
+    - conan install . --build=missing -o libuv/*:shared=True
     - cmake --preset conan-release
     - cmake --build ./build/Release
     - cd build/Release && ctest --output-on-failure
@@ -35,7 +35,7 @@ test-linux-Debug:
     - source .venv/bin/activate
     - pip install conan
     - conan profile detect --force
-    - conan install . --build=libuv/1.49.2 --build=cryptopp/8.9.0 -s build_type=Debug -o libuv/*:shared=False
+    - conan install . --build=missing -s build_type=Debug -o libuv/*:shared=False
     - cmake --preset conan-debug -DCMAKE_BUILD_TYPE=Debug
     - cmake --build ./build/Debug
     - cd build/Debug && ctest --output-on-failure

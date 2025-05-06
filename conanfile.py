@@ -10,7 +10,7 @@ class libprotoRecipe(ConanFile):
     def requirements(self):
         self.requires("libuv/[>=1.49.2]")
         self.requires("cryptopp/[>=8.9.0]")
-        #self.requires("libsodium/[*]")
+        self.requires("libsodium/[1.0.20]")
         
     def build_requirements(self):
         self.tool_requires("cmake/[>=3.28.3]")
