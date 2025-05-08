@@ -3,6 +3,10 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 enable_testing()
 
+if(ANDROID)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -v -stdlib=libc++")
+endif()
+
 project("protonet")
 find_package(libuv CONFIG REQUIRED)
 #find_package(cryptopp CONFIG REQUIRED)
