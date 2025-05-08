@@ -2,6 +2,7 @@
 #define PROTO_H
 
 extern "C" {
+    #include <uv.h>
     #include "./core.h"
 }
 
