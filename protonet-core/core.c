@@ -1,4 +1,5 @@
 #include <uv.h>
+#include <sodium.h>
 #include "./proto/core.h"
 
 FILE* flog;
@@ -41,6 +42,12 @@ Protonet* Init(void){
 	log_set_lock(logLocker, NULL);
 	log_add_callback(failCallback, NULL, LOG_FATAL);
 	log_info("Started at %d:%02d:%02d_%02d:%02d:%02d", tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
+
+	if (sodium_init() < 0) {
+       log_fatal("Failed to initialize libsodium. Quiting");
+	   return NULL;
+    }
+
 	_p = malloc(sizeof(Protonet));
 	_p->isUp = true;
 	//_p->loop = malloc(sizeof(uv_loop_t));

@@ -23,6 +23,21 @@ if(WIN32)
     )
     endif()
 
+    if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+        set(LIBSODIUM_PATH "${libsodium_BIN_DIRS_DEBUG}/libsodium-26.dll")
+    else()
+        set(LIBSODIUM_PATH "${libsodium_BIN_DIRS_RELEASE}/libsodium-26.dll")
+    endif()
+    set(OUT_PATH2 "${PROJECT_BINARY_DIR}/libsodium-26.dll")
+
+    add_custom_target(copy_libsodium
+    COMMAND ${CMAKE_COMMAND} -E copy
+            ${LIBSODIUM_PATH}
+            ${OUT_PATH2}
+    COMMENT "Copying libsodium library to test folder"
+    DEPENDS libsodium::libsodium
+)
+
     add_custom_target(copy_lib
     COMMAND ${CMAKE_COMMAND} -E copy
             ${DLL_PATH}
@@ -43,6 +58,7 @@ foreach(i IN LISTS client_functions)
         add_dependencies(client_test_${i} copy_lib)
         if(CMAKE_BUILD_TYPE STREQUAL "Release")
             add_dependencies(client_test_${i} copy_libuv)
+            add_dependencies(client_test_${i} copy_libsodium)
         endif()
     endif()
 
