@@ -353,12 +353,12 @@ void Client::read(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf){
 			}
 
 			if(client->trac.readAgain){
-				uv_buf_t buff = uv_buf_init(buf->base, client->trac.readExtra);
+				uv_buf_t buff = uv_buf_init(buf->base, nread);
 				uv_fs_write(client->loop, &req, client->trac.file, &buff, 1, client->trac.fileOffset, NULL);
 				uv_fs_req_cleanup(&req);
 				client->trac.readExtra -= nread;
 				client->trac.fileOffset += nread;
-				if(client->trac.readExtra == 0){
+				if(client->trac.readExtra <= 0){
 					client->trac.readAgain = false;
 				}
 			} else if(pck->datalen-8 > nread){
