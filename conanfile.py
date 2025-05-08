@@ -6,24 +6,26 @@ import os
 class libprotoRecipe(ConanFile):
     settings = "os", "compiler", "build_type", "arch"
     name = "proto"
-    
-    default_options = {
-        "libuv/*:shared" : "True",
-        "libsodium/*:shared" : "True"
-    }
 
     def requirements(self):
-        self.requires("libuv/[>=1.49.2]")
-        #self.requires("cryptopp/[>=8.9.0]")
-        self.requires("libsodium/[1.0.20]")
+        if self.settings.build_type == "Debug":
+            self.requires("libuv/[>=1.49.2]")
+            self.requires("libsodium/[1.0.20]")
+        else:
+            self.requires("libuv/[>=1.49.2]", options={"shared": True})
+            self.requires("libsodium/[1.0.20]", options={"shared": True})
         
     #def build_requirements(self):
         #self.tool_requires("cmake/[>=3.28.3]")
     
-    def configure(self):
-        if self.settings.build_type == "Debug":
-            self.options.update("libuv/*:shared", "False")
-            self.options.update("libsodium/*:shared", "False")
+    #def configure(self):
+        #print(type(self.options))
+        #if self.settings.build_type == "Debug":
+        #    self.options.update('libuv/*:shared', False)
+        #    self.options.update('libsodium/*:shared', False)
+        #else:
+        #    self.options.update('libuv/*:shared', True)
+        #    self.options.update('libsodium/*:shared', True) 
         
     def generate(self):
         deps = CMakeDeps(self)
