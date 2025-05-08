@@ -247,7 +247,7 @@ void Client::read(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf){
 	Packet* pck = (Packet*)buf->base;
 	Client* client = (Client*)proto_getClient();
 
-	if (pck->Mode == SPTP_TRAC){
+	if (pck->Mode == SPTP_TRAC && !client->trac.readAgain){
 		struct TRAC* pckdata = (struct TRAC*)pck->data;
 
 		if(strcmp(pckdata->Name, client->name->c_str()) != 0){

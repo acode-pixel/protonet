@@ -18,7 +18,7 @@ int main(int argc, char** argv){
     uv_fs_open(server->loop, &req, "./test.txt", O_WRONLY | O_CREAT, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH, NULL);
     int fd = req.result;
     uv_fs_req_cleanup(&req);
-    int i = 16;
+    int i = 1600;
     char* data = (char*)malloc(65536*i);
     uv_random(NULL, NULL, data, 65536*i, 0, NULL);
     uv_buf_t buf = uv_buf_init(data, 65536*i);
