@@ -30,7 +30,7 @@ class Server {
 	    int nConn;
 	    char IP[INET_ADDRSTRLEN];		/* host IP */
 	    char destIP[INET_ADDRSTRLEN];	/* Destination IP */
-	    char serverName[12];	/* Server Name */ 
+	    string serverName;	/* Server Name */ 
 	    Client* client;		/* for client-server hybrid */
 	    vector<Client*> Clientlist;
 	    vector<tracItem*> Traclist;

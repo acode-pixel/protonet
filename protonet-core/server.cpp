@@ -13,8 +13,19 @@ Server::Server(char* inter, char* serverName, char Dir[], char* peerIp){
 	uv_ip4_addr(this->IP, S_PORT, &addr.address.address4);
 
 	log_info("Server IP: %s", this->IP);
-	strcpy(this->serverName, serverName);
-	log_info("Server name: %s", this->serverName);
+
+	if (serverName == NULL || strlen(serverName) > MAX_NAMESIZE || strlen(serverName) < MIN_NAMESIZE){
+		if(serverName != NULL)
+			(strlen(serverName) > MAX_NAMESIZE || strlen(serverName) < MIN_NAMESIZE) ? log_info("Note: Name should be between %d and %d long.", MIN_NAMESIZE, MAX_NAMESIZE) : (void)NULL;
+		char name[MAX_NAMESIZE];
+		//uv_ip4_name(&addr.address.address4, str_addr, INET_ADDRSTRLEN);
+		char data[8];
+		uv_random(NULL, NULL, data, 8, 0, NULL);
+		getHex((uint8_t*)data, 8, name);
+		this->serverName.assign(name);
+	} 
+	else{this->serverName.assign(serverName);}
+	log_info("Server name: %s", this->serverName.c_str());
 	dir.resize(strlen(Dir)+1);
 	dir.assign(Dir);
 	if (strcmp("/", &dir.back()) != 0)
@@ -188,7 +199,7 @@ void Server::pckParser(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf){
 		for(Client* client : server->Clientlist){
 			if(client->socket == stream && pckData->hops == 1)
 				client->name->assign(pck->Name);
-			sendPck(client->socket, Server::write_cb, server->serverName, SPTP_TRAC, data, sizeof(struct TRAC));
+			sendPck(client->socket, Server::write_cb, (char*)server->serverName.c_str(), SPTP_TRAC, data, sizeof(struct TRAC));
 		}
 
 		free(data);
@@ -212,7 +223,7 @@ void Server::pckParser(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf){
 					struct DATA* buff = (struct DATA*)malloc(sizeof(struct DATA));
 					strcpy(buff->data, msg);
 					buff->tracID = data->tracID;
-					sendPck(stream, Server::write_cb, server->serverName, SPTP_DATA, buff, sizeof(struct DATA)-(MAX_DATASIZE-13));
+					sendPck(stream, Server::write_cb, (char*)server->serverName.c_str(), SPTP_DATA, buff, sizeof(struct DATA)-(MAX_DATASIZE-13));
 					free(buff);
 
 					uv_shutdown_t* shreq = (uv_shutdown_t*)malloc(sizeof(uv_shutdown_t));
@@ -235,17 +246,17 @@ void Server::pckParser(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf){
 			}
 		} else if(strncmp(data->data, "VERIFY", 6) == 0) {
 			for (tracItem* trac : server->Traclist){
-				if(strcmp(pck->Name, trac->fileRequester) == 0 && data->tracID == trac->tracID && trac->complete){
+				if(strncmp(pck->Name, trac->fileRequester, MAX_NAMESIZE) == 0 && data->tracID == trac->tracID && trac->complete){
 					getFileHashSHA256(trac->fileReq, server->loop, trac->hash);
 					struct DATA* data2 = (struct DATA*)malloc(sizeof(struct DATA));
 					if(memcmp(trac->hash, data->data+7, 32) == 0){
 						data2->tracID = trac->tracID;
 						strcpy(data2->data, "VERIFIED");
-						sendPck((uv_stream_t*)trac->Socket, Server::write_cb, server->serverName, SPTP_DATA, data2, sizeof(struct DATA)-(MAX_DATASIZE - 8));
+						sendPck((uv_stream_t*)trac->Socket, Server::write_cb, (char*)server->serverName.c_str(), SPTP_DATA, data2, sizeof(struct DATA)-(MAX_DATASIZE - 8));
 					} else {
 						data2->tracID = trac->tracID;
 						strcpy(data2->data, "NOT VERIFIED");
-						sendPck((uv_stream_t*)trac->Socket, Server::write_cb, server->serverName, SPTP_DATA, data2, sizeof(struct DATA)-(MAX_DATASIZE - 12));
+						sendPck((uv_stream_t*)trac->Socket, Server::write_cb, (char*)server->serverName.c_str(), SPTP_DATA, data2, sizeof(struct DATA)-(MAX_DATASIZE - 12));
 						log_debug("Failed hash for %s", trac->fileReq);
 					}
 					free(data2);
@@ -253,7 +264,7 @@ void Server::pckParser(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf){
 			}
 		} else {
 			for (tracItem* trac : server->Traclist){
-				if(strcmp(pck->Name, trac->fileRequester) == 0 && data->tracID == trac->tracID){
+				if(strncmp(pck->Name, trac->fileRequester, MAX_NAMESIZE) == 0 && data->tracID == trac->tracID){
 					if(strncmp((char*)data->data, "OK", 2) == 0){
 						trac->confirmed = true;
 						trac->Socket = (uv_tcp_t*)stream;
@@ -311,12 +322,12 @@ void Server::tracCheck(uv_check_t *handle){
 				uv_fs_close(serv->loop, &req, trac->file, NULL);
 				trac->complete = true;
 				strcpy((char*)data->data, "EOF");
-				sendPck((uv_stream_t*)trac->Socket, Server::write_cb, serv->serverName, SPTP_DATA, data, sizeof(struct DATA)-(MAX_DATASIZE-3));
+				sendPck((uv_stream_t*)trac->Socket, Server::write_cb, (char*)serv->serverName.c_str(), SPTP_DATA, data, sizeof(struct DATA)-(MAX_DATASIZE-3));
 			} else {
 				trac->fileOffset += req.result;
 				trac->total_transmitted += 1;
 				data->id = trac->total_transmitted;
-				sendPck((uv_stream_t*)trac->Socket, Server::write_cb, serv->serverName, SPTP_DATA, data, sizeof(struct DATA)-(MAX_DATASIZE-req.result));
+				sendPck((uv_stream_t*)trac->Socket, Server::write_cb, (char*)serv->serverName.c_str(), SPTP_DATA, data, sizeof(struct DATA)-(MAX_DATASIZE-req.result));
 			} 
 			uv_fs_req_cleanup(&req);
 			free(data);

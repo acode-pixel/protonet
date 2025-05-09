@@ -33,6 +33,7 @@ extern "C" {
 #define C_PORT 5657
 #define S_PORT 5657
 #define MAX_NAMESIZE 16
+#define MIN_NAMESIZE 4
 typedef struct Packet {
 	char Proto[4];
 	char Name[MAX_NAMESIZE];

@@ -63,56 +63,34 @@ int clientServerHybrid(char* ServerInterface, char* IP){
 }
 
 uv_interface_address_t getInterIP(char interface_name[]){
-	/*struct ifreq ifr;
-	ifr.ifr_addr.sa_family = AF_INET;
-	strncpy(ifr.ifr_name, inter, IFNAMSIZ-1);
-	if (ioctl(fd, SIOCGIFADDR, &ifr) == -1){
-		perror("Failed tyo get IP of inter");
-		return 0;
-	} 
-	return ((struct sockaddr_in*)&ifr.ifr_addr)->sin_addr.s_addr;*/
 	uv_interface_address_t* interfaces;
     int count;
+	uv_interface_address_t inter;
     uv_interface_addresses(&interfaces, &count);
 
     for(int i = 0; i < count; i++){
         char ip[INET_ADDRSTRLEN];
-        uv_interface_address_t inter = interfaces[i];
+        memcpy(&inter, &interfaces[i], sizeof(uv_interface_address_t));
 		if(strcmp(inter.name, interface_name) == 0){
-			//free(inter.name);
-			free(interfaces);
+			uv_free_interface_addresses(interfaces, count);
 			return inter;
 		}
-		//free(inter.name);
     } 
-	free(interfaces);
+	uv_free_interface_addresses(interfaces, count);
 	return (uv_interface_address_t){NULL};
 }
 
-int sendPck(/*int fd*/ uv_stream_t* stream_tcp, uv_write_cb write_cb, char* Name, uint8_t Mode, void* data, uint size){
-	Packet* pck = NULL; // free this
+int sendPck(uv_stream_t* stream_tcp, uv_write_cb write_cb, char* Name, uint8_t Mode, void* data, uint size){
+	Packet* pck = NULL;
 	uint pckSize =  (size == 0) ? strlen(data) : size;
 	pck = (Packet*) malloc(sizeof(Packet) + pckSize);
 	memset(pck, 0, sizeof(Packet) + pckSize);
 	memcpy(pck->Proto, "SPTP", 4);
 	strcpy(pck->Name, Name);
 	pck->Mode = Mode;
-
-	/*if (pckSize > 1024){
-		errno = 84;
-		log_fatal("Failed creating packet: %s", strerror(errno));
-		free(pck);
-		return -1;
-	}*/
 	
 	memcpy(pck->data, data, pckSize);
 	pck->datalen = pckSize;
-
-	/*if (send(fd, pck, sizeof(*pck) + pckSize+1, 0) == -1){
-		perror("Falied to send Pck");
-		free(pck);
-		return -1;
-	}*/
 
 	uv_buf_t pckbuf[1];
 	pckbuf[0] = uv_buf_init((char*)pck, sizeof(*pck) + pck->datalen);
@@ -120,39 +98,8 @@ int sendPck(/*int fd*/ uv_stream_t* stream_tcp, uv_write_cb write_cb, char* Name
 	write->data = pck;
 	// need callback from client or server
 	uv_write(write, stream_tcp, pckbuf, 1, write_cb);
-	//uv_run(_p->loop, UV_RUN_ONCE);
-	/*free(pck);*/
 	return 0;
 }
-
-// REMOVE THIS, client and server should have their own response from uv_read
-/*
-int readPck(int fd, Packet* buf){
-
-	if (recv(fd, buf, sizeof(*buf), 0) == -1){
-		perror("read Failed:");
-		return errno;
-	}
-
-	if (strlen(buf->Proto) == 0){
-		return -1;
-	}
-
-	buf = realloc(buf, sizeof(Packet)+buf->datalen);
-	read(fd, buf->data, buf->datalen);
-
-	return 0;
-} 
-*/
-/*int fillTracItem(tracItem* trac, uint tracID, char* fileRequester, uint8_t hops, uint8_t lifetime, int fileOffset, char* fileReq){
-	trac->tracID = tracID;
-	trac->hops = hops;
-	trac->lifetime = lifetime;
-	trac->fileOffset = fileOffset;
-	strcpy(trac->fileReq, fileReq);
-	strcpy(trac->fileRequester, fileRequester);
-	return 0;
-}*/
 
 void failCallback(log_Event *ev){
 	log_info("Shutting down API due to fatal error: %s", ev->fmt);

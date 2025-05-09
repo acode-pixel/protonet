@@ -9,11 +9,15 @@ Client:: Client(char* inter, char name[], char* IP, char outpath[]){
 	addr = getInterIP(inter);
 	log_info("Client IP: %s", inet_ntoa(addr.address.address4.sin_addr));
 
-	if (name == NULL || strlen(name) >= MAX_NAMESIZE){
-		(strlen(name) >= 255) ? log_info("Note: Name should be less than %d.", MAX_NAMESIZE) : (void)NULL;
-		char str_addr[INET_ADDRSTRLEN];
-		uv_ip4_name(&addr.address.address4, str_addr, INET_ADDRSTRLEN);
-		this->name->assign(str_addr);
+	if (name == NULL || strlen(name) > MAX_NAMESIZE || strlen(name) < MIN_NAMESIZE){
+		if(name != NULL)
+			(strlen(name) > MAX_NAMESIZE || strlen(name) < MIN_NAMESIZE) ? log_info("Note: Name should be between %d and %d long.", MIN_NAMESIZE, MAX_NAMESIZE) : (void)NULL;
+		char name[MAX_NAMESIZE];
+		//uv_ip4_name(&addr.address.address4, str_addr, INET_ADDRSTRLEN);
+		char data[8];
+		uv_random(NULL, NULL, data, 8, 0, NULL);
+		getHex((uint8_t*)data, 8, name);
+		this->name->assign(name);
 	} 
 
 	else {this->name->assign(name);}
@@ -250,7 +254,7 @@ void Client::read(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf){
 	if (pck->Mode == SPTP_TRAC && !client->trac.readAgain){
 		struct TRAC* pckdata = (struct TRAC*)pck->data;
 
-		if(strcmp(pckdata->Name, client->name->c_str()) != 0){
+		if(strncmp(pckdata->Name, client->name->c_str(), MAX_NAMESIZE) != 0){
 			if(proto_getServer() != NULL){
 				// WIP (when it isnt for us but we can send it to someone else)
 			}
@@ -287,40 +291,12 @@ void Client::read(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf){
 			uv_fs_req_cleanup(&req);
 			filepath.assign(*client->outDir).append(client->trac.fileReq);
 
-			/*uv_fs_open(client->loop, &req, filepath.c_str(), O_RDONLY, 0, NULL);
-			int file = req.result;
-			char* data = (char*)malloc(65536);
-			uv_buf_t buf = uv_buf_init(data, 65536);
-			uv_fs_req_cleanup(&req);
-
-			CryptoPP::SHA256 hash;
-			uv_fs_read(client->loop, &req, file, &buf, 1, -1, NULL);
-
-			while(req.result > 0){
-				hash.Update((const CryptoPP::byte*)buf.base, req.result);
-				uv_fs_req_cleanup(&req);
-				uv_fs_read(client->loop, &req, file, &buf, 1, -1, NULL);
-			}
-
-			uv_fs_req_cleanup(&req);
-			uv_fs_close(client->loop, &req, file, NULL);
-			uv_fs_req_cleanup(&req);
-
-			hash.Final((CryptoPP::byte*)&client->trac.hash[0]);*/
-
 			getFileHashSHA256((char*)filepath.c_str(), client->loop, client->trac.hash);
 
-			/*CryptoPP::HexEncoder encoder;
-			string encoded;
-			encoder.Put(client->trac.hash, sizeof(client->trac.hash));
-			encoder.MessageEnd();
-			encoded.resize(sizeof(client->trac.hash)*2);
-			encoder.Get((CryptoPP::byte*)&encoded[0], encoded.size());*/
 			char encoded[sizeof(client->trac.hash)*2];
 			getHex(client->trac.hash, sizeof(client->trac.hash), encoded);
 
 			log_info("Downloaded File hash: %s", encoded);
-			//free(data);
 
 			struct DATA* data2 = (struct DATA*)malloc(sizeof(struct DATA));
 			memset(data2, 0, sizeof(struct DATA));

@@ -51,7 +51,7 @@ static const char *level_colors[] = {
 
 
 static void stdout_callback(log_Event *ev) {
-  char buf[16];
+  char buf[17];
   buf[strftime(buf, sizeof(buf), "%H:%M:%S", ev->time)] = '\0';
 #ifdef LOG_USE_COLOR
   fprintf(
@@ -70,7 +70,7 @@ static void stdout_callback(log_Event *ev) {
 
 
 static void file_callback(log_Event *ev) {
-  char buf[64];
+  char buf[65];
   buf[strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", ev->time)] = '\0';
   fprintf(
     ev->udata, "%s %-5s %s:%d: ",
