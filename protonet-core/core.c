@@ -86,7 +86,7 @@ int sendPck(uv_stream_t* stream_tcp, uv_write_cb write_cb, char* Name, uint8_t M
 	pck = (Packet*) malloc(sizeof(Packet) + pckSize);
 	memset(pck, 0, sizeof(Packet) + pckSize);
 	memcpy(pck->Proto, "SPTP", 4);
-	strcpy(pck->Name, Name);
+	strncpy(pck->Name, Name, MAX_NAMESIZE);
 	pck->Mode = Mode;
 	
 	memcpy(pck->data, data, pckSize);

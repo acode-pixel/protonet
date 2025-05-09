@@ -191,7 +191,7 @@ int Client::makeFileReq(char File[]){
 	this->fileReq->assign(File);
 	//this->socketMode = SPTP_BROD;
 	sendPck(this->socket, Client::on_write, (char*)this->name->c_str(), 1, br, sizeof(struct BROD) + strlen(File));
-	strcpy(this->trac.fileRequester, this->name->c_str());
+	strncpy(this->trac.fileRequester, this->name->c_str(), MAX_NAMESIZE);
 	strcpy(this->trac.fileReq, this->fileReq->c_str());
 	uv_barrier_wait(&this->barrier);
 	uv_clock_gettime(UV_CLOCK_MONOTONIC, &future);

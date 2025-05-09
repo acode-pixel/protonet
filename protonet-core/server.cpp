@@ -178,7 +178,7 @@ void Server::pckParser(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf){
 		// create trac data
 		struct TRAC* data = (TRAC*)malloc(sizeof(struct TRAC));
 		memset(data, 0, sizeof(struct TRAC));
-		strcpy(data->Name, pck->Name);
+		strncpy(data->Name, pck->Name, MAX_NAMESIZE);
 		data->tracID = rand();
 		data->lifetime = pckData->hops;
 		data->hops = pckData->hops;
@@ -190,7 +190,7 @@ void Server::pckParser(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf){
 		trac->lifetime = data->lifetime;
 		trac->socketStatus = SPTP_TRAC;
 		trac->fileSize = data->fileSize;
-		strcpy(trac->fileRequester, data->Name);
+		strncpy(trac->fileRequester, data->Name, MAX_NAMESIZE);
 		strcpy(trac->fileReq, filepath);
 		server->Traclist.push_back(trac);
 
@@ -218,7 +218,7 @@ void Server::pckParser(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf){
 
 			for (Client* client : server->Clientlist){
 				
-				if(strcmp(client->name->c_str(), pck->Name) == 0 || strcmp(client->name->c_str(), str_addr) == 0){
+				if(strncmp(client->name->c_str(), pck->Name, MAX_NAMESIZE) == 0 || strcmp(client->name->c_str(), str_addr) == 0){
 					char msg[] = "DISCONNECT OK";
 					struct DATA* buff = (struct DATA*)malloc(sizeof(struct DATA));
 					strcpy(buff->data, msg);
