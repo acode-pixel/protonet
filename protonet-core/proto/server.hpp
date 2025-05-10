@@ -36,7 +36,7 @@ class Server {
 	    vector<tracItem*> Traclist;
 	    string dir;	/* Server Dir */
 
-		MYLIB_API Server(char* inter, char* serverName, char Dir[], char* peerIp);
+		MYLIB_API Server(const char* inter, const char Dir[] = "./", int port = S_PORT, const char* serverName = "", const char* peerIp = "", int peerPort = S_PORT);
 
 		private:
 			static void on_connection(uv_stream_t *server, int status);

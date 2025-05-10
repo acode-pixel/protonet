@@ -2,11 +2,11 @@
 #include "./proto/client.hpp"
 // make client name random letters not ip
 
-Client:: Client(char* inter, char name[], char* IP, char outpath[]){
+Client:: Client(const char* inter, const char* IP, int serverPort, const char name[], const char outpath[]){
 	log_add_callback(failCallback, NULL, 5);
 
 	uv_interface_address_t addr;
-	addr = getInterIP(inter);
+	addr = getInterIP((char*)inter);
 	log_info("Client IP: %s", inet_ntoa(addr.address.address4.sin_addr));
 
 	if (name == NULL || strlen(name) > MAX_NAMESIZE || strlen(name) < MIN_NAMESIZE){
@@ -46,7 +46,7 @@ Client:: Client(char* inter, char name[], char* IP, char outpath[]){
 		log_info("Client output Dir: %s", this->outDir->c_str());
 
 		proto_setClient(this);
-		int r = Client::connectToNetwork(IP);
+		int r = Client::connectToNetwork((char*)IP, serverPort);
 
 		if(r < 0){
 			log_error("An error occured while creating Client.");
@@ -100,7 +100,7 @@ Client::~Client(){
 	free(this->loop);
 }
 
-int Client::connectToNetwork(char* IP){
+int Client::connectToNetwork(char* IP, int port){
     uv_connect_t connect_req;
 	uv_tcp_t* tcpSocket = (uv_tcp_t*)malloc(sizeof(uv_tcp_t)); 
 	//uv_tcp_t tcpSocket;
@@ -109,7 +109,7 @@ int Client::connectToNetwork(char* IP){
 
 	struct sockaddr_in dest;
 
-    uv_ip4_addr(IP, C_PORT, &dest);
+    uv_ip4_addr(IP, port, &dest);
 
     tcpSocket->data = this;
 

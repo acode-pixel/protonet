@@ -51,8 +51,9 @@ static const char *level_colors[] = {
 
 
 static void stdout_callback(log_Event *ev) {
-  char buf[17];
-  buf[strftime(buf, sizeof(buf), "%H:%M:%S", ev->time)] = '\0';
+  char buf[16];
+  memset(buf, 0, sizeof(buf));
+  strftime(buf, sizeof(buf), "%H:%M:%S", ev->time);
 #ifdef LOG_USE_COLOR
   fprintf(
     ev->udata, "%s %s%-5s\x1b[0m \x1b[90m%s:%d:\x1b[0m ",

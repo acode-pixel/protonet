@@ -2,8 +2,8 @@
 #include "./proto/server.hpp"
 #include "./proto/server-wrapper.h"
 
-void* Server_new(char* inter, char* serverName, char Dir[], char* peerIp) {
-    return new Server(inter, serverName, Dir, peerIp);
+void* Server_new(char* inter, char Dir[], int port, char* serverName, char* peerIp, int peerPort) {
+    return new Server(inter, Dir, port, serverName, peerIp, peerPort);
 }
 
 void Server_delete(void* server) {

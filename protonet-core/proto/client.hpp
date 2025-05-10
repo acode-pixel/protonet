@@ -30,9 +30,9 @@ class Client {
         uv_loop_t* loop;
         string* outDir = new string();
 
-        MYLIB_API Client(char* inter, char name[], char* IP, char outpath[]);
+        MYLIB_API Client(const char* inter, const char* IP, int serverPort = S_PORT, const char name[] = "", const char outpath[] = "./");
         MYLIB_API ~Client();
-        MYLIB_API int connectToNetwork(char* IP);
+        MYLIB_API int connectToNetwork(char* IP, int port);
         MYLIB_API int makeFileReq(char File[]);
 	    MYLIB_API int disconnectFromNetwork();
     

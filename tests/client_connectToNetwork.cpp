@@ -7,13 +7,14 @@ int main(int argc, char** argv){
     Client* client;
     Server* server;
     #ifdef _WIN32
-    server = new Server("Loopback Pseudo-Interface 1", "test", ".", "");
+    // char* inter, char Dir[], int port, char* serverName, char* peerIp
+    server = new Server("Loopback Pseudo-Interface 1", ".", S_PORT);
     uv_sleep(1000);
-    client = new Client("Loopback Pseudo-Interface 1", "test", "127.0.0.1", ".");
+    client = new Client("Loopback Pseudo-Interface 1", "127.0.0.1");
     #else
-    server = new Server("lo", "test", ".", "");
+    server = new Server("lo", ".", S_PORT);
     uv_sleep(1000);
-    client = new Client("lo", "test", "127.0.0.1", ".");
+    client = new Client("lo", "127.0.0.1");
     #endif
 
     if(client->socket != NULL){

@@ -5,7 +5,7 @@
 extern "C" {
 #endif
 
-void* Server_new(char* inter, char* serverName, char Dir[], char* peerIp);           // Create a new MyClass object
+void* Server_new(char* inter, char Dir[], int port, char* serverName, char* peerIp, int peerPort);           // Create a new MyClass object
 void Server_delete(void* server); // Call printMessage method
 
 #ifdef __cplusplus

@@ -1,8 +1,8 @@
 #include <uv.h>
 #include "./proto/server.hpp"
 
-Server::Server(char* inter, char* serverName, char Dir[], char* peerIp){
-	uv_interface_address_t addr = getInterIP(inter);
+Server::Server(const char* inter, const char Dir[], int port, const char* serverName, const char* peerIp, int peerPort){
+	uv_interface_address_t addr = getInterIP((char*)inter);
 
 	uv_loop_t* loop = (uv_loop_t*)malloc(sizeof(uv_loop_t));
 	uv_loop_init(loop);
@@ -10,7 +10,7 @@ Server::Server(char* inter, char* serverName, char Dir[], char* peerIp){
 	this->loop = loop;
 
 	uv_ip4_name(&addr.address.address4, this->IP, INET_ADDRSTRLEN); // src IP
-	uv_ip4_addr(this->IP, S_PORT, &addr.address.address4);
+	uv_ip4_addr(this->IP, port, &addr.address.address4);
 
 	log_info("Server IP: %s", this->IP);
 
@@ -45,7 +45,7 @@ Server::Server(char* inter, char* serverName, char Dir[], char* peerIp){
 	}
 
 	if(strlen(peerIp) > 0){
-		Client* client = new Client(inter, serverName, peerIp, Dir);
+		Client* client = new Client(inter, peerIp, peerPort, serverName, Dir);
 		memcpy(&this->client, client, sizeof(Client));
 		strcpy(this->IP, peerIp);
 	}

@@ -8,9 +8,9 @@ int main(int argc, char** argv){
     Client* client;
 
     #ifdef _WIN32
-        server = new Server("Loopback Pseudo-Interface 1", NULL, ".", "");
+        server = new Server("Loopback Pseudo-Interface 1");
     #else
-        server = new Server("lo", NULL, ".", "");
+        server = new Server("lo");
     #endif
 
     uv_fs_t req;
@@ -34,9 +34,9 @@ int main(int argc, char** argv){
     uv_fs_req_cleanup(&req);
 
         #ifdef _WIN32
-        client = new Client("Loopback Pseudo-Interface 1", NULL, "127.0.0.1", "./test_dir/");
+        client = new Client("Loopback Pseudo-Interface 1", "127.0.0.1", S_PORT, "", "./test_dir/");
     #else
-        client = new Client("lo", NULL, "127.0.0.1", "./test_dir/");
+        client = new Client("lo", "127.0.0.1", S_PORT, "", "./test_dir/");
     #endif
 
     client->makeFileReq("test.txt");
