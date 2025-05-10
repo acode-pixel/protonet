@@ -286,17 +286,21 @@ void Client::read(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf){
 
 		if(strncmp((char*)pckdata->data, "EOF", 3) == 0){
 			// close open file
+			uv_fs_ftruncate(client->loop, &req, client->trac.file, client->trac.fileSize, NULL);
+			uv_fs_req_cleanup(&req);
+
 			uv_fs_close(client->loop, &req, client->trac.file, NULL);
 			client->trac.complete = true;
 			uv_fs_req_cleanup(&req);
 			filepath.assign(*client->outDir).append(client->trac.fileReq);
 
-			getFileHashSHA256((char*)filepath.c_str(), client->loop, client->trac.hash);
+			getFileHashSHA256((char*)filepath.c_str(), client->loop, client->trac.hash); // rename later
 
 			char encoded[sizeof(client->trac.hash)*2];
 			getHex(client->trac.hash, sizeof(client->trac.hash), encoded);
 
 			log_info("Downloaded File hash: %s", encoded);
+			log_info("Total rx: %d", client->trac.total_received);
 
 			struct DATA* data2 = (struct DATA*)malloc(sizeof(struct DATA));
 			memset(data2, 0, sizeof(struct DATA));

@@ -323,6 +323,7 @@ void Server::tracCheck(uv_check_t *handle){
 				trac->complete = true;
 				strcpy((char*)data->data, "EOF");
 				sendPck((uv_stream_t*)trac->Socket, Server::write_cb, (char*)serv->serverName.c_str(), SPTP_DATA, data, sizeof(struct DATA)-(MAX_DATASIZE-3));
+				log_info("Total rx: %d", trac->total_transmitted);
 			} else {
 				trac->fileOffset += req.result;
 				trac->total_transmitted += 1;
