@@ -336,6 +336,7 @@ void Client::read(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf){
 				client->trac.fileOffset += nread;
 				if(client->trac.readExtra <= 0){
 					client->trac.readAgain = false;
+					client->trac.readExtra = 0;
 				}
 			} else if(pck->datalen-8 > nread){
 				uv_buf_t buff = uv_buf_init((char*)pckdata->data, nread-(sizeof(Packet)+8));
