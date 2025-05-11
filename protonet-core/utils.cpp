@@ -51,6 +51,7 @@ int getFileHashSHA256(char* filepath, uv_loop_t* loop, void* out){
 }
 
 void getHex(uint8_t* hex, int size, char* out){
+	// theres a bug here
 	std::stringstream ss;
 	ss << std::hex;
 

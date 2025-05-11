@@ -84,7 +84,7 @@ typedef struct tracItem {
 	char fileReq[255]; 	// file requested
 	uint8_t hash[32];
 	bool readAgain;
-	uint readExtra; // if packet is split
+	int readExtra; // if packet is split
 	uint total_transmitted; 
 	uint total_received;
 

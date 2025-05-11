@@ -332,15 +332,30 @@ void Client::read(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf){
 				uv_fs_req_cleanup(&req);
 			}
 
-			if(client->trac.readAgain && strncmp(buf->base, "SPTP", 4) != 0){
+			if(client->trac.readAgain){
 				uv_buf_t buff = uv_buf_init(buf->base, nread);
-				uv_fs_write(client->loop, &req, client->trac.file, &buff, 1, client->trac.fileOffset, NULL);
-				uv_fs_req_cleanup(&req);
-				client->trac.readExtra -= nread;
-				client->trac.fileOffset += nread;
-				if(client->trac.readExtra <= 0){
+				client->trac.readExtra -= buff.len;
+				if(buff.len == client->trac.readExtra){
 					client->trac.readAgain = false;
 					client->trac.readExtra = 0;
+					client->trac.fileOffset += buff.len;
+				} else if(client->trac.readExtra < 0){
+					// we over-read 
+					buff.len += client->trac.readExtra;
+					uv_fs_write(client->loop, &req, client->trac.file, &buff, 1, client->trac.fileOffset, NULL);
+					uv_fs_req_cleanup(&req);
+					client->trac.readAgain = false;
+					client->trac.readExtra = 0;
+					client->trac.fileOffset += buff.len;
+					void* data = malloc(nread - buff.len);
+					memcpy(data, buff.base+(buff.len), nread - buff.len);
+					uv_buf_t buff2 = uv_buf_init((char*)data, nread - buff.len);
+					Client::read(stream, buff2.len, &buff2);
+				}
+				else {
+					uv_fs_write(client->loop, &req, client->trac.file, &buff, 1, client->trac.fileOffset, NULL);
+					uv_fs_req_cleanup(&req);
+					client->trac.fileOffset += buff.len;
 				}
 			} else if(pck->datalen-8 > nread){
 				uv_buf_t buff = uv_buf_init((char*)pckdata->data, nread-(sizeof(Packet)+8));
