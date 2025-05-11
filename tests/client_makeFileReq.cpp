@@ -4,15 +4,10 @@
 
 int main(int argc, char** argv){
     Protonet* p = Init();
-    //Server* server;
+    Server* server;
     Client* client;
 
-    client = new Client("WiFi", "192.168.18.211");
-    client->makeFileReq("data.dat");
-    client->disconnectFromNetwork();
-    return 0;
-
-    /*#ifdef _WIN32
+    #ifdef _WIN32
         server = new Server("Loopback Pseudo-Interface 1");
     #else
         server = new Server("lo");
@@ -67,5 +62,5 @@ int main(int argc, char** argv){
     uv_fs_req_cleanup(&req);
     uv_fs_unlink(client->loop, &req, "./test.txt", NULL);
     uv_fs_req_cleanup(&req);
-    return 0;*/
+    return 0;
 }
