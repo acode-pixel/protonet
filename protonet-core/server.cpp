@@ -5,9 +5,11 @@ Server::Server(const char* inter, const char Dir[], int port, const char* server
 	uv_interface_address_t addr = getInterIP((char*)inter);
 
 	uv_loop_t* loop = (uv_loop_t*)malloc(sizeof(uv_loop_t));
+	memset(loop, 0, sizeof(uv_loop_t));
 	uv_loop_init(loop);
 	
 	this->loop = loop;
+	this->loop->data = this;
 
 	uv_ip4_name(&addr.address.address4, this->IP, INET_ADDRSTRLEN); // src IP
 	uv_ip4_addr(this->IP, port, &addr.address.address4);
@@ -46,14 +48,18 @@ Server::Server(const char* inter, const char Dir[], int port, const char* server
 
 	if(strlen(peerIp) > 0){
 		Client* client = new Client(inter, peerIp, peerPort, serverName, Dir);
-		memcpy(&this->client, client, sizeof(Client));
+		client->isPartofaServer = true;
+		client->server = this;
+		this->client = client;
 		strcpy(this->IP, peerIp);
 	}
 
+	memset(&this->pollTimeout, 0, sizeof(uv_timer_t));
 	uv_timer_init(this->loop, &this->pollTimeout);
 	uv_timer_start(&this->pollTimeout, NOP, 200, 200);
 
 	uv_fs_t req;
+	memset(&req, 0, sizeof(uv_fs_t));
 	uv_fs_access(this->loop, &req, Dir, UV_FS_O_RDONLY, NULL);
 	if (req.result < 0){
 		log_error("Directory %s not accessible", Dir);
@@ -69,7 +75,7 @@ Server::Server(const char* inter, const char Dir[], int port, const char* server
 
 	log_info("Successfully created Server");
 	log_info("Started server thread: %lu", this->tid);
-	proto_setServer(this);
+	//proto_setServer(this);
 
 	return;
 }
@@ -87,7 +93,8 @@ void Server::on_connection(uv_stream_t *stream, int status){
 	}
 
 	uv_tcp_t* client_conn = (uv_tcp_t*) malloc(sizeof(uv_tcp_t));
-	Server* server = (Server*)proto_getServer();
+	//Server* server = (Server*)proto_getServer();
+	Server* server = (Server*)stream->loop->data;
 	uv_tcp_init(server->loop, client_conn);
 	if (uv_accept(stream, (uv_stream_t*) client_conn) == 0) {
 		Client* new_client = (Client*)malloc(sizeof(Client));
@@ -151,7 +158,8 @@ void Server::pckParser(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf){
 	}
 
 	Packet* pck = (Packet*)buf->base;
-	Server* server = (Server*)proto_getServer();
+	//Server* server = (Server*)proto_getServer();
+	Server* server = (Server*)stream->loop->data;
 
 	if(pck->Mode == SPTP_BROD){
 		log_debug("Server received BROD packet");
@@ -281,7 +289,8 @@ void Server::pckParser(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf){
 }
 
 void Server::tracCheck(uv_check_t *handle){
-	Server* serv = (Server*)proto_getServer();
+	//Server* serv = (Server*)proto_getServer();
+	Server* serv = (Server*)handle->loop->data;
 	if(serv->Traclist.size() != 0){
 		for(tracItem* trac : serv->Traclist){
 
@@ -348,7 +357,8 @@ void Server::on_disconnection(uv_shutdown_t *req, int status){
 
 void Server::on_close(uv_handle_t *handle){
 	Client* client = (Client*)handle->data;
-	Server* server = (Server*)proto_getServer();
+	//Server* server = (Server*)proto_getServer();
+	Server* server = (Server*)handle->loop->data;
 	free(handle);
 
 	for (auto it = server->Clientlist.begin(); it != server->Clientlist.end(); ++it) {

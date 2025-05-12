@@ -8,9 +8,9 @@ int main(int argc, char** argv){
     Client* client;
 
     #ifdef _WIN32
-        server = new Server("Loopback Pseudo-Interface 1", ".", S_PORT);
+        server = new Server("Loopback Pseudo-Interface 1");
     #else
-        server = new Server("lo", ".", S_PORT);
+        server = new Server("lo");
     #endif
 
     uv_fs_t req;

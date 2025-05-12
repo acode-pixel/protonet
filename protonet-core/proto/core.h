@@ -34,6 +34,8 @@ extern "C" {
 #define S_PORT 5657
 #define MAX_NAMESIZE 16
 #define MIN_NAMESIZE 4
+#define MAX_CLIENT_INSTANCES 50
+#define MAX_SERVER_INSTANCES 50
 typedef struct Packet {
 	char Proto[4];
 	char Name[MAX_NAMESIZE];
@@ -95,14 +97,8 @@ typedef struct Protonet {
 	bool clientServerHybrid;
 	//uv_loop_t* loop;
 	uv_thread_t tid;
-	void* Client; // Client var
-	void* Server; // Server var
 } Protonet;
 
-void proto_setClient(void* Client);
-void* proto_getClient();
-void proto_setServer(void* Server);
-void* proto_getServer();
 void NOP(uv_timer_t *handle);
 
 #ifdef DEBUG

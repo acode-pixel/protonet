@@ -28,7 +28,7 @@ Client:: Client(const char* inter, const char* IP, int serverPort, const char na
 		uv_loop_t* loop = (uv_loop_t*)malloc(sizeof(uv_loop_t));
 		uv_loop_init(loop);
 		this->loop = loop;
-
+		this->loop->data = this;
 		uv_fs_t req;
 		uv_fs_access(this->loop, &req, outpath, R_OK | W_OK, NULL);
 
@@ -45,7 +45,8 @@ Client:: Client(const char* inter, const char* IP, int serverPort, const char na
 		this->outDir->assign(outpath);
 		log_info("Client output Dir: %s", this->outDir->c_str());
 
-		proto_setClient(this);
+		//proto_setClient(this);
+
 		int r = Client::connectToNetwork((char*)IP, serverPort);
 
 		if(r < 0){
@@ -249,13 +250,14 @@ void Client::read(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf){
 	}
 
 	Packet* pck = (Packet*)buf->base;
-	Client* client = (Client*)proto_getClient();
+	//Client* client = (Client*)proto_getClient();
+	Client* client = (Client*)stream->data;
 
 	if (pck->Mode == SPTP_TRAC && !client->trac.readAgain){
 		struct TRAC* pckdata = (struct TRAC*)pck->data;
 
 		if(strncmp(pckdata->Name, client->name->c_str(), MAX_NAMESIZE) != 0){
-			if(proto_getServer() != NULL){
+			if(client->isPartofaServer){
 				// WIP (when it isnt for us but we can send it to someone else)
 			}
 			free(buf->base);

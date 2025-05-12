@@ -72,6 +72,7 @@ static void stdout_callback(log_Event *ev) {
 
 static void file_callback(log_Event *ev) {
   char buf[65];
+  memset(buf, 0, 65);
   buf[strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", ev->time)] = '\0';
   fprintf(
     ev->udata, "%s %-5s %s:%d: ",

@@ -4,7 +4,7 @@ project("tests" C)
 set(core_functions init)
 
 set(client_functions connectToNetwork makeFileReq disconnectFromNetwork)
-set(server_functions tracCheck)
+set(server_functions tracCheck re-broadcasting)
 ## MingW
 if(WIN32)
     set(DLL_PATH "${CMAKE_BINARY_DIR}/protonet-core/libproto.dll")

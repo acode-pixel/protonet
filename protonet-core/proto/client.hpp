@@ -29,6 +29,8 @@ class Client {
 	    string* fileReq = new string();
         uv_loop_t* loop;
         string* outDir = new string();
+        bool isPartofaServer = false;
+        void* server = NULL;
 
         MYLIB_API Client(const char* inter, const char* IP, int serverPort = S_PORT, const char name[] = "", const char outpath[] = "./");
         MYLIB_API ~Client();

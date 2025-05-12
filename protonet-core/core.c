@@ -10,19 +10,6 @@ void NOP(uv_timer_t *handle){
 	return;
 }
 
-void proto_setClient(void* Client){
-	if(_p != NULL){ _p->Client = Client; };
-}
-void* proto_getClient(){
-	if(_p != NULL){return _p->Client; };
-}
-void proto_setServer(void* Server){
-	if(_p != NULL){ _p->Server = Server; };
-}
-void* proto_getServer(){
-	if(_p != NULL){return _p->Server; };
-}
-
 Protonet* Init(void){
 	// put logs to file
   	time_t t = time(NULL);
@@ -53,8 +40,6 @@ Protonet* Init(void){
 	_p = malloc(sizeof(Protonet));
 	_p->isUp = true;
 	//_p->loop = malloc(sizeof(uv_loop_t));
-	_p->Client = NULL;
-	_p->Server = NULL;
 	//uv_loop_init(_p->loop);
 	_p->tid = uv_thread_self();
 	return _p;
@@ -108,8 +93,6 @@ void failCallback(log_Event *ev){
 
 	fclose(flog);
 	_p->isUp = false;
-	Client_delete(_p->Client);
-	Server_delete(_p->Server);
 	//_p = NULL;
 	#ifndef DEBUG
 	exit(-1);
@@ -120,6 +103,7 @@ void failCallback(log_Event *ev){
 }
 
 Protonet* Stop(void){
+	// expand this to handle still running instances
 	log_info("Shutting down API");
 	fclose(flog);
 	_p->isUp = false;

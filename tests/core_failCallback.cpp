@@ -12,7 +12,6 @@ int main(int argc, char** argv){
     #else
     client = new Client("lo", "127.0.0.1");
     #endif
-    protonet2->Client = client;
     failTest();
     return 0;
 }
