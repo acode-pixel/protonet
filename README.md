@@ -6,7 +6,7 @@
 ```
 pip install conan
 conan profile detect
-conan install . -s build_type=<Debug/Release> -o libuv/*:shared=<True/False>
+conan install . -s build_type=<Debug/Release> --build=missing
 ```
 **Build (Debug/Release)**
 ```
