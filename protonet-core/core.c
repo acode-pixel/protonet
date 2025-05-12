@@ -28,7 +28,9 @@ Protonet* Init(void){
   	time_t t = time(NULL);
   	struct tm tm = *localtime(&t);
 	char fname[255];
-	sprintf(fname, "ProtoNetAPI-0.1_%d-%02d-%02d_%02d-%02d-%02d.txt", tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
+	uint data;
+	uv_random(NULL, NULL, &data, sizeof(int), 0, NULL);
+	sprintf(fname, "ProtoNetAPI-1.0-%d.log", data);
 	log_info("Log file: %s", fname);
 	flog = fopen(fname, "w");
 	
