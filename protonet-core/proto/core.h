@@ -83,6 +83,7 @@ typedef struct tracItem {
 	bool confirmed; 	// if transaction id is confirmed
 	bool complete;		// if transaction is complete
 	bool canDelete;	// if transaction can be deleted
+	bool isLink; // if trac is used as a link between client and server
 	char fileReq[255]; 	// file requested
 	uint8_t hash[32];
 	bool readAgain;

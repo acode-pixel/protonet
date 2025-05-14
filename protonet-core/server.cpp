@@ -46,6 +46,7 @@ Server::Server(const char* inter, const char Dir[], int port, const char* server
 		return;
 	}
 
+	this->client = nullptr;
 	if(strlen(peerIp) > 0){
 		Client* client = new Client(inter, peerIp, peerPort, serverName, Dir);
 		client->isPartofaServer = true;
@@ -127,17 +128,18 @@ void Server::write_cb(uv_write_t *req, int status){
 	}
 
 	Packet* pck = (Packet*)req->data;
+	Server* serv = (Server*)req->handle->loop->data;
 
 	switch (pck->Mode)
 	{
 	case SPTP_BROD:
-		log_debug("Server sent BROD packet");
+		log_debug("Server[%d] sent BROD packet", serv->tid);
 		break;
 	case SPTP_TRAC:
-		log_debug("Server sent TRAC packet");
+		log_debug("Server[%d] sent TRAC packet", serv->tid);
 		break;
 	case SPTP_DATA:
-		log_debug("Server sent DATA packet");
+		log_debug("Server[%d] sent DATA packet", serv->tid);
 		break;
 	}
 
@@ -162,7 +164,7 @@ void Server::pckParser(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf){
 	Server* server = (Server*)stream->loop->data;
 
 	if(pck->Mode == SPTP_BROD){
-		log_debug("Server received BROD packet");
+		log_debug("Server[%d] received BROD packet", server->tid);
 		struct BROD* pckData = (struct BROD*)pck->data;
 		char filepath[server->dir.size()+(pck->datalen-1)+1];
 		memset(filepath, 0, sizeof(filepath));
@@ -175,6 +177,15 @@ void Server::pckParser(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf){
 			uv_fs_req_cleanup(&req);
 			log_error("Server cant access file %s due to error: [%s]", filepath, uv_err_name(req.result));
 			log_debug("Server cant access file %s due to error: [%s]", filepath, uv_strerror(req.result));
+			if(server->client != NULL){
+				log_info("Server[%d] re-broadcasting to other servers", server->tid);
+				for(Client* client : server->Clientlist){
+					if(client->socket == stream && pckData->hops == 1)
+						client->name->assign(pck->Name);
+				}
+				pckData->hops += 1;
+				sendPck(server->client->socket, NULL, pck->Name, pck->Mode, pck->data, pck->datalen);
+			}
 			free(buf->base);
 			return;
 		}
@@ -255,6 +266,11 @@ void Server::pckParser(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf){
 		} else if(strncmp(data->data, "VERIFY", 6) == 0) {
 			for (tracItem* trac : server->Traclist){
 				if(strncmp(pck->Name, trac->fileRequester, MAX_NAMESIZE) == 0 && data->tracID == trac->tracID && trac->complete){
+					if(server->client != NULL){
+						sendPck(server->client->socket, NULL, pck->Name, pck->Mode, pck->data, pck->datalen);
+						free(buf->base);
+						return;
+					}
 					getFileHashSHA256(trac->fileReq, server->loop, trac->hash);
 					struct DATA* data2 = (struct DATA*)malloc(sizeof(struct DATA));
 					if(memcmp(trac->hash, data->data+7, 32) == 0){
@@ -277,6 +293,10 @@ void Server::pckParser(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf){
 						trac->confirmed = true;
 						trac->Socket = (uv_tcp_t*)stream;
 						trac->socketStatus = SPTP_DATA;
+						if(trac->isLink){
+							//memcpy(&server->client->trac, trac, sizeof(tracItem));
+							sendPck(server->client->socket, NULL, pck->Name, pck->Mode, pck->data, pck->datalen);
+						}
 						break;
 					}
 				}
@@ -294,7 +314,7 @@ void Server::tracCheck(uv_check_t *handle){
 	if(serv->Traclist.size() != 0){
 		for(tracItem* trac : serv->Traclist){
 
-			if(!trac->confirmed){
+			if(!trac->confirmed || trac->isLink){
 				continue;
 			} else if(trac->complete){
 				// prepare trac for other requests

@@ -1,5 +1,6 @@
 #include <uv.h>
 #include "./proto/client.hpp"
+#include "./proto/server.hpp"
 // make client name random letters not ip
 
 Client:: Client(const char* inter, const char* IP, int serverPort, const char name[], const char outpath[]){
@@ -259,6 +260,24 @@ void Client::read(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf){
 		if(strncmp(pckdata->Name, client->name->c_str(), MAX_NAMESIZE) != 0){
 			if(client->isPartofaServer){
 				// WIP (when it isnt for us but we can send it to someone else)
+				Server* server = ((Server*)client->server);
+
+				for(Client* clients : server->Clientlist){
+					if(strncmp(clients->name->c_str(), pckdata->Name, MAX_NAMESIZE) == 0){
+						// add client stream to trac list 
+						tracItem* trac = (tracItem*)malloc(sizeof(tracItem));
+						memset(trac, 0, sizeof(tracItem));
+						trac->tracID = pckdata->tracID;
+						trac->lifetime = pckdata->lifetime;
+						trac->socketStatus = SPTP_TRAC;
+						trac->fileSize = pckdata->fileSize;
+						trac->isLink = true;
+						strncpy(trac->fileRequester, pckdata->Name, MAX_NAMESIZE);
+						//strcpy(trac->fileReq, filepath);
+						server->Traclist.push_back(trac);
+						sendPck(clients->socket, NULL, pck->Name, pck->Mode, pckdata, pck->datalen);
+					}
+				}
 			}
 			free(buf->base);
 			return;
@@ -288,6 +307,19 @@ void Client::read(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf){
 
 		if(strncmp((char*)pckdata->data, "EOF", 3) == 0){
 			// close open file
+			if(client->isPartofaServer){
+				Server* server = ((Server*)client->server);
+				for(tracItem* trac : server->Traclist){
+					if(trac->tracID == pckdata->tracID){
+						uv_write_t req;
+						uv_buf_t buff = uv_buf_init(buf->base, sizeof(Packet)+pck->datalen);
+						uv_write(&req, (uv_stream_t*)trac->Socket, &buff, 1, NULL);
+						trac->complete = true;
+						free(buf->base);
+						return;
+					}
+				}
+			}
 			uv_fs_ftruncate(client->loop, &req, client->trac.file, client->trac.fileSize, NULL);
 			uv_fs_req_cleanup(&req);
 
@@ -318,15 +350,52 @@ void Client::read(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf){
 			//uv_shutdown(&shreq, client->socket, Client::on_disconnect);
 			uv_read_stop(client->socket);
 		} else if(strncmp((char*)pckdata->data, "VERIFIED", 8) == 0){
+			if(client->isPartofaServer){
+				Server* server = ((Server*)client->server);
+				for(tracItem* trac : server->Traclist){
+					if(trac->tracID == pckdata->tracID){
+						uv_write_t req;
+						uv_buf_t buff = uv_buf_init(buf->base, sizeof(Packet)+pck->datalen);
+						uv_write(&req, (uv_stream_t*)trac->Socket, &buff, 1, NULL);
+						free(buf->base);
+						return;
+					}
+				}
+			}
 			log_info("File %s is verified", client->trac.fileReq);
 			uv_barrier_wait(&client->barrier);
 		} else if(strncmp((char*)pckdata->data, "NOT VERIFIED", 12) == 0){
+			if(client->isPartofaServer){
+				Server* server = ((Server*)client->server);
+				for(tracItem* trac : server->Traclist){
+					if(trac->tracID == pckdata->tracID){
+						uv_write_t req;
+						uv_buf_t buff = uv_buf_init(buf->base, sizeof(Packet)+pck->datalen);
+						uv_write(&req, (uv_stream_t*)trac->Socket, &buff, 1, NULL);
+						free(buf->base);
+						return;
+					}
+				}
+			}
 			filepath.assign(*client->outDir).append(client->trac.fileReq);
 			log_info("File %s is not verified, deleting file", client->trac.fileReq);
 			uv_fs_unlink(client->loop, &req, filepath.c_str(), NULL);
 			uv_barrier_wait(&client->barrier);
 
 		}else {
+			if(client->isPartofaServer){
+				Server* server = ((Server*)client->server);
+				for(tracItem* trac : server->Traclist){
+					if(trac->tracID == pckdata->tracID){
+						uv_write_t req;
+						uv_buf_t buff = uv_buf_init(buf->base, sizeof(Packet)+pck->datalen);
+						uv_write(&req, (uv_stream_t*)trac->Socket, &buff, 1, NULL);
+						trac->total_received += 1;
+						free(buf->base);
+						return;
+					}
+				}
+			}
 			if(client->trac.file == 0){
 				filepath.assign(*client->outDir).append(client->trac.fileReq);
 				uv_fs_open(client->loop, &req, filepath.c_str(), O_CREAT | O_RDWR, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH, NULL);
