@@ -17,7 +17,11 @@ int main(int argc, char** argv){
 
     uv_fs_mkdir(server2->loop, &req, "./server1", O_RDWR, NULL);
     uv_fs_req_cleanup(&req);
+    uv_fs_chmod(server2->loop, &req, "./server1", S_IRWXU | S_IXGRP | S_IRGRP | S_IROTH | S_IXOTH, NULL);
+    uv_fs_req_cleanup(&req);
     uv_fs_mkdir(server2->loop, &req, "./client", O_RDWR, NULL);
+    uv_fs_req_cleanup(&req);
+    uv_fs_chmod(server2->loop, &req, "./client", S_IRWXU | S_IXGRP | S_IRGRP | S_IROTH | S_IXOTH, NULL);
     uv_fs_req_cleanup(&req);
 
     uv_fs_open(server2->loop, &req, "./test.txt", O_WRONLY | O_CREAT, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH, NULL);
