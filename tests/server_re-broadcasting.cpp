@@ -39,7 +39,7 @@ int main(int argc, char** argv){
     #ifdef _WIN32
     client = new Client("Loopback Pseudo-Interface 1", "127.0.0.1", 5654, "", "./client/");
     #else
-    client = new Server("lo", "127.0.0.1", 5654, "", "./client/");
+    client = new Client("lo", "127.0.0.1", 5654, "", "./client/");
     #endif
 
     client->makeFileReq("test.txt");
