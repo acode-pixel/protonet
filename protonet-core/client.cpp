@@ -311,11 +311,11 @@ void Client::read(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf){
 				Server* server = ((Server*)client->server);
 				for(tracItem* trac : server->Traclist){
 					if(trac->tracID == pckdata->tracID){
-						uv_write_t req;
+						uv_write_t* wreq = (uv_write_t*)malloc(sizeof(uv_write_t));
 						uv_buf_t buff = uv_buf_init(buf->base, sizeof(Packet)+pck->datalen);
-						uv_write(&req, (uv_stream_t*)trac->Socket, &buff, 1, NULL);
+						wreq->data = buff.base;
+						uv_write(wreq, (uv_stream_t*)trac->Socket, &buff, 1, Client::link_write);
 						trac->complete = true;
-						free(buf->base);
 						return;
 					}
 				}
@@ -354,10 +354,10 @@ void Client::read(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf){
 				Server* server = ((Server*)client->server);
 				for(tracItem* trac : server->Traclist){
 					if(trac->tracID == pckdata->tracID){
-						uv_write_t req;
+						uv_write_t* wreq = (uv_write_t*)malloc(sizeof(uv_write_t));
 						uv_buf_t buff = uv_buf_init(buf->base, sizeof(Packet)+pck->datalen);
-						uv_write(&req, (uv_stream_t*)trac->Socket, &buff, 1, NULL);
-						free(buf->base);
+						wreq->data = buff.base;
+						uv_write(wreq, (uv_stream_t*)trac->Socket, &buff, 1, Client::link_write);
 						return;
 					}
 				}
@@ -369,10 +369,10 @@ void Client::read(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf){
 				Server* server = ((Server*)client->server);
 				for(tracItem* trac : server->Traclist){
 					if(trac->tracID == pckdata->tracID){
-						uv_write_t req;
+						uv_write_t* wreq = (uv_write_t*)malloc(sizeof(uv_write_t));
 						uv_buf_t buff = uv_buf_init(buf->base, sizeof(Packet)+pck->datalen);
-						uv_write(&req, (uv_stream_t*)trac->Socket, &buff, 1, NULL);
-						free(buf->base);
+						wreq->data = buff.base;
+						uv_write(wreq, (uv_stream_t*)trac->Socket, &buff, 1, Client::link_write);
 						return;
 					}
 				}
@@ -387,11 +387,12 @@ void Client::read(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf){
 				Server* server = ((Server*)client->server);
 				for(tracItem* trac : server->Traclist){
 					if(trac->tracID == pckdata->tracID){
-						uv_write_t req;
+						uv_write_t* wreq = (uv_write_t*)malloc(sizeof(uv_write_t));
 						uv_buf_t buff = uv_buf_init(buf->base, sizeof(Packet)+pck->datalen);
-						uv_write(&req, (uv_stream_t*)trac->Socket, &buff, 1, NULL);
+						wreq->data = buff.base;
+						uv_write(wreq, (uv_stream_t*)trac->Socket, &buff, 1, Client::link_write);
 						trac->total_received += 1;
-						free(buf->base);
+						//free(buf->base);
 						return;
 					}
 				}
@@ -456,14 +457,8 @@ void Client::on_close(uv_handle_t *handle){
 	client->socket = nullptr;
 	return;
 }
-/*
-bool clientCheckSocket(Client* client){
-	struct timespec ts = {1, 0};
 
-	int nSockets = kevent(client->kqueueInstance, NULL, 0, NULL, 1, &ts);
-
-	if (nSockets == 0){
-		return false;
-	} else {return true;}
+void Client::link_write(uv_write_t* req, int status){
+	free(req->data);
+	free(req);
 }
-*/

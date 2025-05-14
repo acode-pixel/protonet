@@ -46,6 +46,7 @@ class Client {
         static void threadStart(void* data);
 	    static void on_disconnect(uv_shutdown_t *req, int status);
         static void on_close(uv_handle_t *handle);
+        static void link_write(uv_write_t* req, int status);
         //bool clientCheckSocket(Client* client);
 
 };

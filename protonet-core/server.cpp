@@ -133,13 +133,13 @@ void Server::write_cb(uv_write_t *req, int status){
 	switch (pck->Mode)
 	{
 	case SPTP_BROD:
-		log_debug("Server[%d] sent BROD packet", serv->tid);
+		log_debug("Server[%s] sent BROD packet", serv->serverName.c_str());
 		break;
 	case SPTP_TRAC:
-		log_debug("Server[%d] sent TRAC packet", serv->tid);
+		log_debug("Server[%s] sent TRAC packet", serv->serverName.c_str());
 		break;
 	case SPTP_DATA:
-		log_debug("Server[%d] sent DATA packet", serv->tid);
+		log_debug("Server[%s] sent DATA packet", serv->serverName.c_str());
 		break;
 	}
 
@@ -164,7 +164,7 @@ void Server::pckParser(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf){
 	Server* server = (Server*)stream->loop->data;
 
 	if(pck->Mode == SPTP_BROD){
-		log_debug("Server[%d] received BROD packet", server->tid);
+		log_debug("Server[%s] received BROD packet", server->serverName.c_str());
 		struct BROD* pckData = (struct BROD*)pck->data;
 		char filepath[server->dir.size()+(pck->datalen-1)+1];
 		memset(filepath, 0, sizeof(filepath));
@@ -178,7 +178,7 @@ void Server::pckParser(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf){
 			log_error("Server cant access file %s due to error: [%s]", filepath, uv_err_name(req.result));
 			log_debug("Server cant access file %s due to error: [%s]", filepath, uv_strerror(req.result));
 			if(server->client != NULL){
-				log_info("Server[%d] re-broadcasting to other servers", server->tid);
+				log_info("Server[%s] re-broadcasting to other servers", server->serverName.c_str());
 				for(Client* client : server->Clientlist){
 					if(client->socket == stream && pckData->hops == 1)
 						client->name->assign(pck->Name);
