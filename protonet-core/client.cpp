@@ -195,6 +195,11 @@ int Client::makeFileReq(char File[]){
 	sendPck(this->socket, Client::on_write, (char*)this->name->c_str(), 1, br, sizeof(struct BROD) + strlen(File));
 	strncpy(this->trac.fileRequester, this->name->c_str(), MAX_NAMESIZE);
 	strcpy(this->trac.fileReq, this->fileReq->c_str());
+	this->trac.complete = false;
+	this->trac.file = 0;
+	this->trac.fileOffset = 0;
+	this->trac.readAgain = 0;
+	this->trac.readExtra = false;
 	uv_barrier_wait(&this->barrier);
 	uv_clock_gettime(UV_CLOCK_MONOTONIC, &future);
 	log_info("Completed request in %ld.%us", (future.tv_sec - past.tv_sec), (future.tv_nsec - past.tv_nsec));
@@ -279,6 +284,12 @@ void Client::read(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf){
 					}
 				}
 			}
+			free(buf->base);
+			return;
+		}
+
+		if(client->trac.tracID == pckdata->tracID){
+			client->trac.fileSize = pckdata->fileSize;
 			free(buf->base);
 			return;
 		}

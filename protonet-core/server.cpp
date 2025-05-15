@@ -194,6 +194,30 @@ void Server::pckParser(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf){
 		uv_fs_req_cleanup(&req);
 		uv_fs_stat(server->loop, &req, filepath, NULL);
 
+		// check if server recognizes client
+		for(tracItem* trac : server->Traclist){
+			if(strncmp(trac->fileRequester, pck->Name, MAX_NAMESIZE) == 0){
+				trac->confirmed = true;
+				trac->complete = false;
+				strcpy(trac->fileReq, filepath);
+				trac->fileOffset = 0;
+				trac->fileSize = req.statbuf.st_size;
+				trac->file = 0;
+
+				struct TRAC* data = (TRAC*)malloc(sizeof(struct TRAC));
+				memset(data, 0, sizeof(struct TRAC));
+				strncpy(data->Name, pck->Name, MAX_NAMESIZE);
+				data->tracID = trac->tracID;
+				data->lifetime = trac->hops;
+				data->hops = trac->hops;
+				data->fileSize = trac->fileSize;
+				sendPck((uv_stream_t*)trac->Socket, Server::write_cb, (char*)server->serverName.c_str(), SPTP_TRAC, data, sizeof(struct TRAC));
+				uv_fs_req_cleanup(&req);
+				free(data);
+				free(buf->base);
+				return;
+			}
+		}
 		// create trac data
 		struct TRAC* data = (TRAC*)malloc(sizeof(struct TRAC));
 		memset(data, 0, sizeof(struct TRAC));
@@ -319,6 +343,7 @@ void Server::tracCheck(uv_check_t *handle){
 			} else if(trac->complete){
 				// prepare trac for other requests
 				//memset(trac, 0, sizeof(tracItem));
+				trac->socketStatus = 0;
 				continue;
 			}
 

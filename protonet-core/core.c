@@ -30,7 +30,7 @@ Protonet* Init(void){
 	uv_mutex_init_recursive(&logLock);
 	log_set_lock(logLocker, NULL);
 	log_add_callback(failCallback, NULL, LOG_FATAL);
-	log_info("Started at %d:%02d:%02d_%02d:%02d:%02d", tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
+	log_info("Started at %d:%02d:%02d %02d:%02d:%02d", tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
 
 	if (sodium_init() < 0) {
        log_fatal("Failed to initialize libsodium. Quiting");
