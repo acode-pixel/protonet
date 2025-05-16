@@ -36,13 +36,13 @@ use MingW when compiling on windows
 
 Tests:
 	Simple networks:
-		client and server
+		✅client and server
 		2 clients and server
 		4 clients and server
 
 	Medium networks:
-		client, server, and client-server hybrid
-		client, server, and 2 client-erver hybrids
+		✅client, server, and client-server hybrid
+		✅client, server, and 2 client-erver hybrids
 		client, server, and 4 client-erver hybrids
 		2 clients, server, and 4 client-erver hybrids
 		4 clients connected to each client-server hybrids with one server
