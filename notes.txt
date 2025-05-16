@@ -10,16 +10,16 @@ use MingW when compiling on windows
 	how transfering files work:
 		(Using a whole network)
 		✅client -> network : broadcasts a requested known file from the network
-		network : other connected clients re-broadcasts the message to other clients
+		✅network : other connected clients re-broadcasts the message to other clients
 		✅network -> server : Server module detects a request from the network that has the available file
-		server -> network : Server tries to retrace the path of the original request through the network to give transaction ID (computers between the path log the transaction ID for further use)
-		network -> client : Client receives a transaction ID for file sharing.
-		client -> network -> server : client sends an OK message to the server.
-		client -> network -> server : both client and server now have a route in which data can be sent and received from one another (with the help of transaction IDs to guide the data)
-		server -> network -> client : server sends an EOF message to the client through the network
-		client -> network -> server : client sneds a request to destroy the path to the server
-		server -> network -> client : server agrees	
-		server & client : both server, network, and client delete their transaction ID removing the path of transmission
+		✅server -> network : Server tries to retrace the path of the original request through the network to give transaction ID (computers between the path log the transaction ID for further use)
+		✅network -> client : Client receives a transaction ID for file sharing.
+		✅client -> network -> server : client sends an OK message to the server.
+		✅client -> network -> server : both client and server now have a route in which data can be sent and received from one another (with the help of transaction IDs to guide the data)
+		✅server -> network -> client : server sends an EOF message to the client through the network
+		✅client -> network -> server : client sneds a request to destroy the path to the server
+		✅server -> network -> client : server agrees	
+		✅server & client : both server, network, and client delete their transaction ID removing the path of transmission
 		END OF OPERATION
 
 		(Using a direct line between server and client)
@@ -33,6 +33,22 @@ use MingW when compiling on windows
 		✅server -> client : server agrees
 		✅server & client : both server and client delete their transaction ID removing the path of transmission
 		END OF OPERATION
+
+Tests:
+	Simple networks:
+		client and server
+		2 clients and server
+		4 clients and server
+
+	Medium networks:
+		client, server, and client-server hybrid
+		client, server, and 2 client-erver hybrids
+		client, server, and 4 client-erver hybrids
+		2 clients, server, and 4 client-erver hybrids
+		4 clients connected to each client-server hybrids with one server
+
+	Complex:
+		client-server hybrids connected to other client server hybrids
 
 	core:
 		Handles protonet instance (backbone of api)
