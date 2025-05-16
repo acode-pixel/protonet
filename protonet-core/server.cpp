@@ -336,9 +336,17 @@ void Server::tracCheck(uv_check_t *handle){
 	//Server* serv = (Server*)proto_getServer();
 	Server* serv = (Server*)handle->loop->data;
 	if(serv->Traclist.size() != 0){
-		for(tracItem* trac : serv->Traclist){
+		for(auto it = serv->Traclist.begin(); it != serv->Traclist.end(); ++it){
+			tracItem* trac = (tracItem*)(*it);
 
-			if(!trac->confirmed || trac->isLink){
+			if(trac->lifetime < 0){
+				free(trac);
+				serv->Traclist.erase(it);
+				continue;
+			}
+
+			if(!trac->confirmed){
+				trac->lifetime -= 1;
 				continue;
 			} else if(trac->complete){
 				// prepare trac for other requests
@@ -346,6 +354,9 @@ void Server::tracCheck(uv_check_t *handle){
 				trac->socketStatus = 0;
 				continue;
 			}
+
+			if(trac->isLink)
+				continue;
 
 			uv_fs_t req;
 

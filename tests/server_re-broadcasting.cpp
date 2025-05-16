@@ -6,6 +6,7 @@ int main(int argc, char** argv){
     Protonet* proto = Init();
     Server* server1;
     Server* server2;
+    Server* server3;
     Client* client;
 
     uv_fs_t req;
@@ -18,6 +19,10 @@ int main(int argc, char** argv){
     uv_fs_mkdir(server2->loop, &req, "./server1", O_RDWR, NULL);
     uv_fs_req_cleanup(&req);
     uv_fs_chmod(server2->loop, &req, "./server1", S_IRWXU | S_IXGRP | S_IRGRP | S_IROTH | S_IXOTH, NULL);
+    uv_fs_req_cleanup(&req);
+    uv_fs_mkdir(server2->loop, &req, "./server3", O_RDWR, NULL);
+    uv_fs_req_cleanup(&req);
+    uv_fs_chmod(server2->loop, &req, "./server3", S_IRWXU | S_IXGRP | S_IRGRP | S_IROTH | S_IXOTH, NULL);
     uv_fs_req_cleanup(&req);
     uv_fs_mkdir(server2->loop, &req, "./client", O_RDWR, NULL);
     uv_fs_req_cleanup(&req);
@@ -36,19 +41,23 @@ int main(int argc, char** argv){
 
     #ifdef _WIN32
     server1 = new Server("Loopback Pseudo-Interface 1", "./server1/", 5654, "", "127.0.0.1");
+    server3 = new Server("Loopback Pseudo-Interface 1", "./server3/", 5653, "", "127.0.0.1", 5654);
     #else
     server1 = new Server("lo", "./server1/", 5654, "", "127.0.0.1");
+    server3 = new Server("lo", "./server3/", 5653, "", "127.0.0.1", 5654);
     #endif
 
     #ifdef _WIN32
-    client = new Client("Loopback Pseudo-Interface 1", "127.0.0.1", 5654, "", "./client/");
+    client = new Client("Loopback Pseudo-Interface 1", "127.0.0.1", 5653, "", "./client/");
     #else
-    client = new Client("lo", "127.0.0.1", 5654, "", "./client/");
+    client = new Client("lo", "127.0.0.1", 5653, "", "./client/");
     #endif
 
     client->makeFileReq("test.txt");
 
     uv_fs_rmdir(server2->loop, &req, "./server1", NULL);
+    uv_fs_req_cleanup(&req);
+    uv_fs_rmdir(server2->loop, &req, "./server3", NULL);
     uv_fs_req_cleanup(&req);
     uv_fs_rmdir(server2->loop, &req, "./client", NULL);
     uv_fs_req_cleanup(&req);

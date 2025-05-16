@@ -266,9 +266,9 @@ void Client::read(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf){
 			if(client->isPartofaServer){
 				// WIP (when it isnt for us but we can send it to someone else)
 				Server* server = ((Server*)client->server);
-
+				pckdata->lifetime -= 1;
 				for(Client* clients : server->Clientlist){
-					if(strncmp(clients->name->c_str(), pckdata->Name, MAX_NAMESIZE) == 0){
+					/*if(strncmp(clients->name->c_str(), pckdata->Name, MAX_NAMESIZE) == 0){
 						// add client stream to trac list 
 						tracItem* trac = (tracItem*)malloc(sizeof(tracItem));
 						memset(trac, 0, sizeof(tracItem));
@@ -281,7 +281,18 @@ void Client::read(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf){
 						//strcpy(trac->fileReq, filepath);
 						server->Traclist.push_back(trac);
 						sendPck(clients->socket, NULL, pck->Name, pck->Mode, pckdata, pck->datalen);
-					}
+					}*/
+					tracItem* trac = (tracItem*)malloc(sizeof(tracItem));
+					memset(trac, 0, sizeof(tracItem));
+					trac->tracID = pckdata->tracID;
+					trac->lifetime = pckdata->lifetime;
+					trac->socketStatus = SPTP_TRAC;
+					trac->fileSize = pckdata->fileSize;
+					trac->isLink = true;
+					strncpy(trac->fileRequester, pckdata->Name, MAX_NAMESIZE);
+					//strcpy(trac->fileReq, filepath);
+					server->Traclist.push_back(trac);
+					sendPck(clients->socket, NULL, pck->Name, pck->Mode, pckdata, pck->datalen);
 				}
 			}
 			free(buf->base);

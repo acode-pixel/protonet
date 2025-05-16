@@ -37,9 +37,8 @@ int main(int argc, char** argv){
     #endif
 
     client->makeFileReq("test.txt");
-    uv_sleep(2000);
     client->disconnectFromNetwork();
-    uv_sleep(2000);
+    uv_sleep(1000);
     
     uv_fs_unlink(client->loop, &req, "./test_dir/test.txt", NULL);
     uv_fs_req_cleanup(&req);
