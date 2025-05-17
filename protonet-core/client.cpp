@@ -213,7 +213,7 @@ void Client::on_write(uv_write_t* req, int status){
 	Client* client = (Client*)(req->handle->data);
 
 	if(status < 0){
-		log_error("Sending packet failed.[%s]", uv_strerror(status));
+		log_error("Client[%s] sending packet failed.[%s]", client->name->c_str(), uv_strerror(status));
 		free(req->data);
 	 	free(req);
 		return;
@@ -224,13 +224,13 @@ void Client::on_write(uv_write_t* req, int status){
 	switch (pck->Mode)
 	{
 	case SPTP_BROD:
-		log_info("Request sent!");
+		log_info("Client[%s] request sent!", client->name->c_str());
 		client->socketMode = SPTP_BROD;
 		break;
 	
 	case SPTP_DATA:
 		struct DATA* data = (struct DATA*)pck->data;
-		log_info("Sending data with tracID: %d", data->tracID);
+		log_info("Client[%s] sending data with tracID: %d", client->name->c_str(), data->tracID);
 		client->socketMode = SPTP_DATA;
 		break;
 	}

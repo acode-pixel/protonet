@@ -1,4 +1,5 @@
 #include <uv.h>
+#include <sodium.h>
 #include "./proto/server.hpp"
 
 Server::Server(const char* inter, const char Dir[], int port, const char* serverName, const char* peerIp, int peerPort){
@@ -190,7 +191,6 @@ void Server::pckParser(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf){
 			return;
 		}
 
-		srand(time(0));
 		uv_fs_req_cleanup(&req);
 		uv_fs_stat(server->loop, &req, filepath, NULL);
 
@@ -222,7 +222,7 @@ void Server::pckParser(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf){
 		struct TRAC* data = (TRAC*)malloc(sizeof(struct TRAC));
 		memset(data, 0, sizeof(struct TRAC));
 		strncpy(data->Name, pck->Name, MAX_NAMESIZE);
-		data->tracID = rand();
+		randombytes_buf(&data->tracID, sizeof(data->tracID));
 		data->lifetime = pckData->hops;
 		data->hops = pckData->hops;
 		data->fileSize = req.statbuf.st_size;
