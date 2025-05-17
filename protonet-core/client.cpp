@@ -191,15 +191,15 @@ int Client::makeFileReq(char File[]){
 	br->hops = 0x01;
 	strcpy(br->fileReq, File);
 	this->fileReq->assign(File);
+	this->trac.complete = false;
+	this->trac.file = 0;
+	this->trac.fileOffset = 0;
+	this->trac.readAgain = false;
+	this->trac.readExtra = false;
 	//this->socketMode = SPTP_BROD;
 	sendPck(this->socket, Client::on_write, (char*)this->name->c_str(), 1, br, sizeof(struct BROD) + strlen(File));
 	strncpy(this->trac.fileRequester, this->name->c_str(), MAX_NAMESIZE);
 	strcpy(this->trac.fileReq, this->fileReq->c_str());
-	this->trac.complete = false;
-	this->trac.file = 0;
-	this->trac.fileOffset = 0;
-	this->trac.readAgain = 0;
-	this->trac.readExtra = false;
 	uv_barrier_wait(&this->barrier);
 	uv_clock_gettime(UV_CLOCK_MONOTONIC, &future);
 	log_info("Completed request in %ld.%us", (future.tv_sec - past.tv_sec), (future.tv_nsec - past.tv_nsec));
@@ -258,7 +258,6 @@ void Client::read(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf){
 	Packet* pck = (Packet*)buf->base;
 	//Client* client = (Client*)proto_getClient();
 	Client* client = (Client*)stream->data;
-
 	if (pck->Mode == SPTP_TRAC && !client->trac.readAgain){
 		struct TRAC* pckdata = (struct TRAC*)pck->data;
 
@@ -295,7 +294,14 @@ void Client::read(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf){
 					sendPck(clients->socket, NULL, pck->Name, pck->Mode, pckdata, pck->datalen);
 				}
 			}
-			free(buf->base);
+			if(nread - (sizeof(Packet)+pck->datalen) > 0){
+				// we need to parse another pck
+				char* data = (char*)malloc(nread - (sizeof(Packet)+pck->datalen));
+				memcpy(data, buf->base+((sizeof(Packet)+pck->datalen)), nread - (sizeof(Packet)+pck->datalen));
+				uv_buf_t buff2 = uv_buf_init(data, nread - (sizeof(Packet)+pck->datalen));
+				Client::read(stream, nread - (sizeof(Packet)+pck->datalen), &buff2);
+			}
+			free(buf->base);	
 			return;
 		}
 
@@ -319,7 +325,7 @@ void Client::read(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf){
 		strcpy((char*)data->data, "OK");
 		sendPck(client->socket, Client::on_write, (char*)client->name->c_str(), SPTP_DATA, data, sizeof(struct DATA)-(MAX_DATASIZE-2));
 		free(data);
-		log_info("Downloading %s (size=%d bytes)", client->trac.fileReq, client->trac.fileSize);
+		log_info("Client[%s] downloading %s (size=%d bytes)", client->name->c_str(), client->trac.fileReq, client->trac.fileSize);
 		
 	} else if(pck->Mode == SPTP_DATA || client->trac.readAgain){
 		// data go brrrrrrrrrrrrrrrr

@@ -98,6 +98,7 @@ void Server::on_connection(uv_stream_t *stream, int status){
 	//Server* server = (Server*)proto_getServer();
 	Server* server = (Server*)stream->loop->data;
 	uv_tcp_init(server->loop, client_conn);
+	//uv_tcp_nodelay(client_conn, 1);
 	if (uv_accept(stream, (uv_stream_t*) client_conn) == 0) {
 		Client* new_client = (Client*)malloc(sizeof(Client));
 		struct sockaddr_storage addr;
