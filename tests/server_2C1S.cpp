@@ -2,7 +2,6 @@
 #include <uv.h>
 #include "proto/proto.hpp"
 
-uv_barrier_t bar;
 Client* client1;
 Client* client2;
 
@@ -12,7 +11,6 @@ void make_Reqs(void* arg){
     } else {
         client2->makeFileReq("test.txt");
     }
-    uv_barrier_wait(&bar);
 }
 
 int main(int argc, char** argv){
@@ -57,8 +55,6 @@ int main(int argc, char** argv){
         client1 = new Client("lo", "127.0.0.1", S_PORT, "", "./test_dir/");
         client2 = new Client("lo", "127.0.0.1", S_PORT, "", "./test2_dir/");
     #endif
-
-    uv_barrier_init(&bar, 2);
 
     uv_thread_t tid;
     uv_thread_create(&tid, make_Reqs, (void*)"1");
