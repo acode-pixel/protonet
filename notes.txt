@@ -37,7 +37,7 @@ use MingW when compiling on windows
 Tests:
 	Simple networks:
 		✅client and server
-		2 clients and server
+		✅2 clients and server
 		4 clients and server
 
 	Medium networks:
