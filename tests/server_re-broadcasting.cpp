@@ -32,8 +32,10 @@ int main(int argc, char** argv){
     uv_fs_open(server2->loop, &req, "./test.txt", O_WRONLY | O_CREAT, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH, NULL);
     int fd = req.result;
     uv_fs_req_cleanup(&req);
-    char data[] = "Test baby woooooooo";
-    uv_buf_t buf = uv_buf_init(data, strlen(data));
+    int i = 191;
+    char* data = (char*)malloc(65536*i);
+    uv_random(NULL, NULL, data, 65536*i, 0, NULL);
+    uv_buf_t buf = uv_buf_init(data, 65536*i);
     uv_fs_write(server2->loop, &req, fd, &buf, 1, 0, NULL);
     uv_fs_req_cleanup(&req);
     uv_fs_close(server2->loop, &req, fd, NULL);

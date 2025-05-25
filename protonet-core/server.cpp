@@ -110,6 +110,10 @@ void Server::on_connection(uv_stream_t *stream, int status){
 		new_client->socket = (uv_stream_t*)client_conn;
 		new_client->socket->data = new_client;
 
+		if(strcmp(server->serverName.c_str(), "Thread2") == 0){
+			log_trace("AHHHHHHHHHHHHHHHH");
+		}
+
 		server->Clientlist.push_back(new_client);
         uv_read_start(new_client->socket, Server::alloc_buf, Server::pckParser);
     }
@@ -188,6 +192,13 @@ void Server::pckParser(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf){
 				pckData->hops += 1;
 				sendPck(server->client->socket, NULL, pck->Name, pck->Mode, pck->data, pck->datalen);
 			}
+			if(nread > sizeof(Packet)+pck->datalen){
+				char* data = (char*)malloc(nread - (sizeof(Packet)+pck->datalen));
+				memcpy(data, buf->base+(sizeof(Packet)+pck->datalen), nread - (sizeof(Packet)+pck->datalen));
+				uv_buf_t buff2 = uv_buf_init(data, nread - (sizeof(Packet)+pck->datalen));
+				Server::pckParser(stream, buff2.len, &buff2);
+			}
+
 			free(buf->base);
 			return;
 		}
@@ -215,6 +226,14 @@ void Server::pckParser(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf){
 				sendPck((uv_stream_t*)trac->Socket, Server::write_cb, (char*)server->serverName.c_str(), SPTP_TRAC, data, sizeof(struct TRAC));
 				uv_fs_req_cleanup(&req);
 				free(data);
+
+				if(nread > sizeof(Packet)+pck->datalen){
+					char* data = (char*)malloc(nread - (sizeof(Packet)+pck->datalen));
+					memcpy(data, buf->base+(sizeof(Packet)+pck->datalen), nread - (sizeof(Packet)+pck->datalen));
+					uv_buf_t buff2 = uv_buf_init(data, nread - (sizeof(Packet)+pck->datalen));
+					Server::pckParser(stream, buff2.len, &buff2);
+				}
+
 				free(buf->base);
 				return;
 			}
@@ -224,7 +243,7 @@ void Server::pckParser(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf){
 		memset(data, 0, sizeof(struct TRAC));
 		strncpy(data->Name, pck->Name, MAX_NAMESIZE);
 		randombytes_buf(&data->tracID, sizeof(data->tracID));
-		data->lifetime = pckData->hops;
+		data->lifetime = pckData->hops+1;
 		data->hops = pckData->hops;
 		data->fileSize = req.statbuf.st_size;
 
@@ -233,6 +252,7 @@ void Server::pckParser(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf){
 		trac->tracID = data->tracID;
 		trac->lifetime = data->lifetime;
 		trac->socketStatus = SPTP_TRAC;
+		trac->Socket = (uv_tcp_t*)stream;
 		trac->fileSize = data->fileSize;
 		strncpy(trac->fileRequester, data->Name, MAX_NAMESIZE);
 		strcpy(trac->fileReq, filepath);
@@ -248,6 +268,13 @@ void Server::pckParser(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf){
 
 		free(data);
 		uv_fs_req_cleanup(&req);
+
+		if(nread > sizeof(Packet)+pck->datalen){
+			char* data = (char*)malloc(nread - (sizeof(Packet)+pck->datalen));
+			memcpy(data, buf->base+(sizeof(Packet)+pck->datalen), nread - (sizeof(Packet)+pck->datalen));
+			uv_buf_t buff2 = uv_buf_init(data, nread - (sizeof(Packet)+pck->datalen));
+			Server::pckParser(stream, buff2.len, &buff2);
+		}
 
 	} else if(pck->Mode == SPTP_DATA){
 		//  handle disconnect when were client/server hybrid
@@ -283,16 +310,19 @@ void Server::pckParser(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf){
 							break;
 						}
 					}
-
-					//log_info("Disconnecting from %s", (strcmp(client->name->c_str(), pck->Name) == 0) ? pck->Name : str_addr);
 				}
-
 			}
 		} else if(strncmp(data->data, "VERIFY", 6) == 0) {
 			for (tracItem* trac : server->Traclist){
 				if(strncmp(pck->Name, trac->fileRequester, MAX_NAMESIZE) == 0 && data->tracID == trac->tracID && trac->complete){
-					if(server->client != NULL){
+					if(server->client != NULL && trac->isLink){
 						sendPck(server->client->socket, NULL, pck->Name, pck->Mode, pck->data, pck->datalen);
+						if(nread > sizeof(Packet)+pck->datalen){
+							char* data = (char*)malloc(nread - (sizeof(Packet)+pck->datalen));
+							memcpy(data, buf->base+(sizeof(Packet)+pck->datalen), nread - (sizeof(Packet)+pck->datalen));
+							uv_buf_t buff2 = uv_buf_init(data, nread - (sizeof(Packet)+pck->datalen));
+							Server::pckParser(stream, buff2.len, &buff2);
+						}
 						free(buf->base);
 						return;
 					}
@@ -309,18 +339,28 @@ void Server::pckParser(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf){
 						log_debug("Failed hash for %s", trac->fileReq);
 					}
 					free(data2);
+					if(nread > sizeof(Packet)+pck->datalen){
+						char* data = (char*)malloc(nread - (sizeof(Packet)+pck->datalen));
+						memcpy(data, buf->base+(sizeof(Packet)+pck->datalen), nread - (sizeof(Packet)+pck->datalen));
+						uv_buf_t buff2 = uv_buf_init(data, nread - (sizeof(Packet)+pck->datalen));
+						Server::pckParser(stream, buff2.len, &buff2);
+					}
 				}
 			}
 		} else {
 			for (tracItem* trac : server->Traclist){
-				if(strncmp(pck->Name, trac->fileRequester, MAX_NAMESIZE) == 0 && data->tracID == trac->tracID){
+				if(strncmp(pck->Name, trac->fileRequester, MAX_NAMESIZE) == 0 && data->tracID == trac->tracID && trac->Socket == (uv_tcp_t*)stream){
 					if(strncmp((char*)data->data, "OK", 2) == 0){
 						trac->confirmed = true;
-						trac->Socket = (uv_tcp_t*)stream;
 						trac->socketStatus = SPTP_DATA;
 						if(trac->isLink){
-							//memcpy(&server->client->trac, trac, sizeof(tracItem));
 							sendPck(server->client->socket, NULL, pck->Name, pck->Mode, pck->data, pck->datalen);
+						}
+						if(int a = nread - (sizeof(Packet)+pck->datalen); a > 0){
+							char* data = (char*)malloc(nread - (sizeof(Packet)+pck->datalen));
+							memcpy(data, buf->base+(sizeof(Packet)+pck->datalen), nread - (sizeof(Packet)+pck->datalen));
+							uv_buf_t buff2 = uv_buf_init(data, nread - (sizeof(Packet)+pck->datalen));
+							Server::pckParser(stream, buff2.len, &buff2);
 						}
 						break;
 					}
@@ -337,12 +377,13 @@ void Server::tracCheck(uv_check_t *handle){
 	//Server* serv = (Server*)proto_getServer();
 	Server* serv = (Server*)handle->loop->data;
 	if(serv->Traclist.size() != 0){
-		for(auto it = serv->Traclist.begin(); it != serv->Traclist.end(); ++it){
-			tracItem* trac = (tracItem*)(*it);
+		for(int a = 0; a < serv->Traclist.size(); a++){
+			tracItem* trac = serv->Traclist[a];
 
 			if(trac->lifetime < 0){
+				auto it = serv->Traclist.begin();
+				serv->Traclist.erase(it+a);
 				free(trac);
-				serv->Traclist.erase(it);
 				continue;
 			}
 
@@ -380,6 +421,7 @@ void Server::tracCheck(uv_check_t *handle){
 			uv_buf_t buff = uv_buf_init((char*)data->data, MAX_DATASIZE);
 			uv_fs_read(serv->loop, &req, trac->file, &buff, 1, trac->fileOffset, NULL);
 
+
 			if(req.result < 0){
 				log_error("Server failed to read requested file %s.[%s]", trac->fileReq, uv_err_name(req.result));
 				log_debug("Server failed to read requested file %s.[%s]", trac->fileReq, uv_strerror(req.result));
@@ -410,6 +452,27 @@ void Server::on_disconnection(uv_shutdown_t *req, int status){
 	//log_info("Disconnected from network");
 	free(req);
 	return;
+}
+
+void Server::batch_write(uv_write_t *req, int status){
+	if(status < 0){
+		log_error("Server failed to write due to error: [%s]", uv_err_name(status));
+		log_debug("Server failed to write due to error: [%s]", uv_strerror(status));
+		void** things_to_free = (void**)req->data;
+		free(things_to_free[0]);
+		free(things_to_free[1]);
+		free(req);
+		return;
+	}
+
+	Server* serv = (Server*)req->handle->loop->data;
+
+	log_debug("Server[%s] sent DATA packet", serv->serverName.c_str());
+
+	void** things_to_free = (void**)req->data;
+	free(things_to_free[0]);
+	free(things_to_free[1]);
+	free(req);
 }
 
 void Server::on_close(uv_handle_t *handle){

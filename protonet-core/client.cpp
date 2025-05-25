@@ -170,6 +170,8 @@ void Client::on_connect(uv_connect_t *req, int status){
         // Handle successful connection
 		//memcpy(&client->socket, req->handle, sizeof(uv_tcp_t));
 		client->socket = req->handle;
+		//if(client->isPartofaServer)
+		//	client->socket->loop = ((Server*)client->server)->loop;
 		uv_read_start(req->handle, Client::alloc_buf, Client::read);
     } else {
         log_error("Connection failed.[%s]", uv_err_name(status));
@@ -245,20 +247,20 @@ void Client::alloc_buf(uv_handle_t *handle, size_t suggested_size, uv_buf_t *buf
 }
 
 void Client::read(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf){
+	Client* client = (Client*)stream->data;
 	if (nread < 0){
-		log_error("Client failed to read due to error: [%s]", uv_err_name(nread));
-		log_debug("Client failed to read due to error: [%s]", uv_strerror(nread));
+		log_error("Client[%s] failed to read due to error: [%s]", client->name->c_str(), uv_err_name(nread));
+		log_debug("Client[%s] failed to read due to error: [%s]", client->name->c_str(), uv_strerror(nread));
 		return;
 	} else if(nread == 0){
-		log_debug("Client read would block");
+		//log_debug("Client[%s] read would block", client->name->c_str());
 		free(buf->base);
 		return;
 	}
 
 	Packet* pck = (Packet*)buf->base;
 	//Client* client = (Client*)proto_getClient();
-	Client* client = (Client*)stream->data;
-	if (pck->Mode == SPTP_TRAC && !client->trac.readAgain){
+	if ( (strncmp(pck->Proto, "SPTP", 4) == 0) && (pck->Mode == SPTP_TRAC) && (!client->trac.readAgain)){
 		struct TRAC* pckdata = (struct TRAC*)pck->data;
 
 		if(strncmp(pckdata->Name, client->name->c_str(), MAX_NAMESIZE) != 0){
@@ -266,21 +268,10 @@ void Client::read(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf){
 				// WIP (when it isnt for us but we can send it to someone else)
 				Server* server = ((Server*)client->server);
 				pckdata->lifetime -= 1;
+				if(strcmp(server->serverName.c_str(), "Thread2") == 0){
+					log_trace("AHHHHHHHHHHHHHHH");
+				}
 				for(Client* clients : server->Clientlist){
-					/*if(strncmp(clients->name->c_str(), pckdata->Name, MAX_NAMESIZE) == 0){
-						// add client stream to trac list 
-						tracItem* trac = (tracItem*)malloc(sizeof(tracItem));
-						memset(trac, 0, sizeof(tracItem));
-						trac->tracID = pckdata->tracID;
-						trac->lifetime = pckdata->lifetime;
-						trac->socketStatus = SPTP_TRAC;
-						trac->fileSize = pckdata->fileSize;
-						trac->isLink = true;
-						strncpy(trac->fileRequester, pckdata->Name, MAX_NAMESIZE);
-						//strcpy(trac->fileReq, filepath);
-						server->Traclist.push_back(trac);
-						sendPck(clients->socket, NULL, pck->Name, pck->Mode, pckdata, pck->datalen);
-					}*/
 					tracItem* trac = (tracItem*)malloc(sizeof(tracItem));
 					memset(trac, 0, sizeof(tracItem));
 					trac->tracID = pckdata->tracID;
@@ -288,18 +279,19 @@ void Client::read(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf){
 					trac->socketStatus = SPTP_TRAC;
 					trac->fileSize = pckdata->fileSize;
 					trac->isLink = true;
+					trac->Socket = (uv_tcp_t*)clients->socket;
 					strncpy(trac->fileRequester, pckdata->Name, MAX_NAMESIZE);
 					//strcpy(trac->fileReq, filepath);
 					server->Traclist.push_back(trac);
 					sendPck(clients->socket, NULL, pck->Name, pck->Mode, pckdata, pck->datalen);
 				}
 			}
-			if(nread - (sizeof(Packet)+pck->datalen) > 0){
+			if(int a = nread - (sizeof(Packet)+pck->datalen); a > 0){
 				// we need to parse another pck
 				char* data = (char*)malloc(nread - (sizeof(Packet)+pck->datalen));
-				memcpy(data, buf->base+((sizeof(Packet)+pck->datalen)), nread - (sizeof(Packet)+pck->datalen));
+				memcpy(data, buf->base+sizeof(Packet)+pck->datalen, nread - (sizeof(Packet)+pck->datalen));
 				uv_buf_t buff2 = uv_buf_init(data, nread - (sizeof(Packet)+pck->datalen));
-				Client::read(stream, nread - (sizeof(Packet)+pck->datalen), &buff2);
+				Client::read(stream, buff2.len, &buff2);
 			}
 			free(buf->base);	
 			return;
@@ -307,6 +299,13 @@ void Client::read(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf){
 
 		if(client->trac.tracID == pckdata->tracID){
 			client->trac.fileSize = pckdata->fileSize;
+			if(int a = nread - (sizeof(Packet)+pck->datalen); a > 0){
+				// we need to parse another pck
+				char* data = (char*)malloc(nread - (sizeof(Packet)+pck->datalen));
+				memcpy(data, buf->base+sizeof(Packet)+pck->datalen, nread - (sizeof(Packet)+pck->datalen));
+				uv_buf_t buff2 = uv_buf_init(data, nread - (sizeof(Packet)+pck->datalen));
+				Client::read(stream, buff2.len, &buff2);
+			}
 			free(buf->base);
 			return;
 		}
@@ -326,8 +325,15 @@ void Client::read(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf){
 		sendPck(client->socket, Client::on_write, (char*)client->name->c_str(), SPTP_DATA, data, sizeof(struct DATA)-(MAX_DATASIZE-2));
 		free(data);
 		log_info("Client[%s] downloading %s (size=%d bytes)", client->name->c_str(), client->trac.fileReq, client->trac.fileSize);
+		if(int a = nread - (sizeof(Packet)+pck->datalen) > 0){
+			// we need to parse another pck
+			char* data = (char*)malloc(nread - (sizeof(Packet)+pck->datalen));
+			memcpy(data, buf->base+sizeof(Packet)+pck->datalen, nread - (sizeof(Packet)+pck->datalen));
+			uv_buf_t buff2 = uv_buf_init(data, nread - (sizeof(Packet)+pck->datalen));
+			Client::read(stream, buff2.len, &buff2);
+		}
 		
-	} else if(pck->Mode == SPTP_DATA || client->trac.readAgain){
+	} else if(pck->Mode == SPTP_DATA || client->trac.readAgain || client->isPartofaServer){
 		// data go brrrrrrrrrrrrrrrr
 		uv_fs_t req;
 		struct DATA* pckdata = (struct DATA*)pck->data;
@@ -338,18 +344,32 @@ void Client::read(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf){
 			if(client->isPartofaServer){
 				Server* server = ((Server*)client->server);
 				for(tracItem* trac : server->Traclist){
-					if(trac->tracID == pckdata->tracID){
+					if(trac->tracID == pckdata->tracID && trac->confirmed){
 						uv_write_t* wreq = (uv_write_t*)malloc(sizeof(uv_write_t));
 						uv_buf_t buff = uv_buf_init(buf->base, sizeof(Packet)+pck->datalen);
-						wreq->data = buff.base;
+						wreq->data = buf->base;
 						uv_write(wreq, (uv_stream_t*)trac->Socket, &buff, 1, Client::link_write);
 						trac->complete = true;
+
+						if(nread > buff.len){
+							char* data = (char*)malloc(nread - buff.len);
+							memcpy(data, buf->base+buff.len, nread - buff.len);
+							uv_buf_t buff2 = uv_buf_init(data, nread - buff.len);
+							Client::read(stream, buff2.len, &buff2);
+						}
 						return;
 					}
 				}
+				if(nread > sizeof(Packet)+pck->datalen){
+					char* data = (char*)malloc(nread - (sizeof(Packet)+pck->datalen));
+					memcpy(data, buf->base+sizeof(Packet)+pck->datalen, nread - (sizeof(Packet)+pck->datalen));
+					uv_buf_t buff2 = uv_buf_init(data, nread - (sizeof(Packet)+pck->datalen));
+					Client::read(stream, buff2.len, &buff2);
+				}
+				return;
 			}
 			uv_fs_ftruncate(client->loop, &req, client->trac.file, client->trac.fileSize, NULL);
-			uv_fs_req_cleanup(&req);
+			//uv_fs_req_cleanup(&req);
 
 			uv_fs_close(client->loop, &req, client->trac.file, NULL);
 			client->trac.complete = true;
@@ -361,8 +381,8 @@ void Client::read(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf){
 			char encoded[sizeof(client->trac.hash)*2];
 			getHex(client->trac.hash, sizeof(client->trac.hash), encoded);
 
-			log_info("Downloaded File hash: %s", encoded);
-			log_info("Total rx: %d", client->trac.total_received);
+			log_info("Client[%s] downloaded File hash: %s", client->name->c_str(), encoded);
+			log_info("Client[%s] total rx: %d", client->name->c_str(), client->trac.total_received);
 
 			struct DATA* data2 = (struct DATA*)malloc(sizeof(struct DATA));
 			memset(data2, 0, sizeof(struct DATA));
@@ -371,6 +391,14 @@ void Client::read(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf){
 			memcpy(data2->data+7, client->trac.hash, 32);
 			sendPck(stream, Client::on_write, (char*)client->name->c_str(), SPTP_DATA, data2, sizeof(struct DATA) - (MAX_DATASIZE - 39));
 			free(data2);
+
+			if(int a = nread - (sizeof(Packet)+pck->datalen); a > 0){
+				// we need to parse another pck
+				char* data = (char*)malloc(nread - (sizeof(Packet)+pck->datalen));
+				memcpy(data, buf->base+sizeof(Packet)+pck->datalen, nread - (sizeof(Packet)+pck->datalen));
+				uv_buf_t buff2 = uv_buf_init(data, nread - (sizeof(Packet)+pck->datalen));
+				Client::read(stream, buff2.len, &buff2);
+			}
 
 		} else if(strncmp((char*)pckdata->data, "DISCONNECT OK", 13) == 0){
 			uv_shutdown_t shreq;
@@ -381,53 +409,159 @@ void Client::read(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf){
 			if(client->isPartofaServer){
 				Server* server = ((Server*)client->server);
 				for(tracItem* trac : server->Traclist){
-					if(trac->tracID == pckdata->tracID){
+					if(trac->tracID == pckdata->tracID && trac->complete){
 						uv_write_t* wreq = (uv_write_t*)malloc(sizeof(uv_write_t));
 						uv_buf_t buff = uv_buf_init(buf->base, sizeof(Packet)+pck->datalen);
-						wreq->data = buff.base;
+						wreq->data = buf->base;
 						uv_write(wreq, (uv_stream_t*)trac->Socket, &buff, 1, Client::link_write);
+
+						if(int a = nread - (sizeof(Packet)+pck->datalen); a > 0){
+							// we need to parse another pck
+							char* data = (char*)malloc(nread - (sizeof(Packet)+pck->datalen));
+							memcpy(data, buf->base+sizeof(Packet)+pck->datalen, nread - (sizeof(Packet)+pck->datalen));
+							uv_buf_t buff2 = uv_buf_init(data, nread - (sizeof(Packet)+pck->datalen));
+							Client::read(stream, buff2.len, &buff2);
+						}
 						return;
 					}
 				}
+				if(int a = nread - (sizeof(Packet)+pck->datalen); a > 0){
+					// we need to parse another pck
+					char* data = (char*)malloc(nread - (sizeof(Packet)+pck->datalen));
+					memcpy(data, buf->base+sizeof(Packet)+pck->datalen, nread - (sizeof(Packet)+pck->datalen));
+					uv_buf_t buff2 = uv_buf_init(data, nread - (sizeof(Packet)+pck->datalen));
+					Client::read(stream, buff2.len, &buff2);
+				}
+				return;
 			}
-			log_info("File %s is verified", client->trac.fileReq);
+			log_info("Client[%s] file %s is verified", client->name->c_str(), client->trac.fileReq);
+			if(int a = nread - (sizeof(Packet)+pck->datalen); a > 0){
+				// we need to parse another pck
+				char* data = (char*)malloc(nread - (sizeof(Packet)+pck->datalen));
+				memcpy(data, buf->base+sizeof(Packet)+pck->datalen, nread - (sizeof(Packet)+pck->datalen));
+				uv_buf_t buff2 = uv_buf_init(data, nread - (sizeof(Packet)+pck->datalen));
+				Client::read(stream, buff2.len, &buff2);
+			}
 			uv_barrier_wait(&client->barrier);
 		} else if(strncmp((char*)pckdata->data, "NOT VERIFIED", 12) == 0){
 			if(client->isPartofaServer){
 				Server* server = ((Server*)client->server);
 				for(tracItem* trac : server->Traclist){
-					if(trac->tracID == pckdata->tracID){
+					if(trac->tracID == pckdata->tracID && trac->complete){
 						uv_write_t* wreq = (uv_write_t*)malloc(sizeof(uv_write_t));
 						uv_buf_t buff = uv_buf_init(buf->base, sizeof(Packet)+pck->datalen);
-						wreq->data = buff.base;
+						wreq->data = buf->base;
 						uv_write(wreq, (uv_stream_t*)trac->Socket, &buff, 1, Client::link_write);
+						if(int a = nread - (sizeof(Packet)+pck->datalen); a > 0){
+							// we need to parse another pck
+							char* data = (char*)malloc(nread - (sizeof(Packet)+pck->datalen));
+							memcpy(data, buf->base+sizeof(Packet)+pck->datalen, nread - (sizeof(Packet)+pck->datalen));
+							uv_buf_t buff2 = uv_buf_init(data, nread - (sizeof(Packet)+pck->datalen));
+							Client::read(stream, buff2.len, &buff2);
+						}
 						return;
 					}
 				}
+				if(int a = nread - (sizeof(Packet)+pck->datalen); a > 0){
+					// we need to parse another pck
+					char* data = (char*)malloc(nread - (sizeof(Packet)+pck->datalen));
+					memcpy(data, buf->base+sizeof(Packet)+pck->datalen, nread - (sizeof(Packet)+pck->datalen));
+					uv_buf_t buff2 = uv_buf_init(data, nread - (sizeof(Packet)+pck->datalen));
+					Client::read(stream, buff2.len, &buff2);
+				}
+				return;
 			}
+			
 			filepath.assign(*client->outDir).append(client->trac.fileReq);
-			log_info("File %s is not verified, deleting file", client->trac.fileReq);
+			log_info("Client[%s] file %s is not verified, deleting file", client->name->c_str(), client->trac.fileReq);
 			uv_fs_unlink(client->loop, &req, filepath.c_str(), NULL);
+			if(nread - (sizeof(Packet)+pck->datalen) > 0){
+				// we need to parse another pck
+				char* data = (char*)malloc(nread - sizeof(Packet)+pck->datalen);
+				memcpy(data, buf->base+sizeof(Packet)+pck->datalen, nread - sizeof(Packet)+pck->datalen);
+				uv_buf_t buff2 = uv_buf_init(data, nread - sizeof(Packet)+pck->datalen);
+				Client::read(stream, buff2.len, &buff2);
+			}
 			uv_barrier_wait(&client->barrier);
 
 		}else {
 			if(client->isPartofaServer){
 				Server* server = ((Server*)client->server);
+
+				if(strncmp((char*)pck->Proto, "SPTP", 4) == 0){
+					*client->processing_trac = pckdata->tracID;
+					log_trace("Server[%s] sent a packet", server->serverName.c_str());
+				}
+
 				for(tracItem* trac : server->Traclist){
-					if(trac->tracID == pckdata->tracID){
-						uv_write_t* wreq = (uv_write_t*)malloc(sizeof(uv_write_t));
-						uv_buf_t buff = uv_buf_init(buf->base, sizeof(Packet)+pck->datalen);
-						wreq->data = buff.base;
-						uv_write(wreq, (uv_stream_t*)trac->Socket, &buff, 1, Client::link_write);
-						trac->total_received += 1;
-						//free(buf->base);
+					if((trac->tracID == *client->processing_trac) && trac->confirmed){
+						if(trac->readAgain){
+							trac->readExtra -= nread;
+							
+							if(trac->readExtra < 0){
+								char* buf2 = (char*)malloc(nread);
+								memcpy(buf2, buf->base, nread);
+								uv_write_t* wreq = (uv_write_t*)malloc(sizeof(uv_write_t));
+								uv_buf_t buff = uv_buf_init(buf2, nread+trac->readExtra);
+								wreq->data = buf2;
+								uv_write(wreq, (uv_stream_t*)trac->Socket, &buff, 1, Client::link_write);
+	
+								char* data = (char*)malloc(-trac->readExtra);
+								memcpy(data, buf->base+(nread+trac->readExtra), -trac->readExtra);
+								uv_buf_t buff2 = uv_buf_init(data, -trac->readExtra);
+								trac->readAgain = false;
+								trac->readExtra = 0;
+								Client::read(stream, buff2.len, &buff2);
+								free(buf->base);
+							} else {
+								uv_write_t* wreq = (uv_write_t*)malloc(sizeof(uv_write_t));
+								uv_buf_t buff = uv_buf_init(buf->base, nread);
+								wreq->data = buf->base;
+								uv_write(wreq, (uv_stream_t*)trac->Socket, &buff, 1, Client::link_write);
+							}
+						} else if((pck->datalen > nread) && (strncmp(pck->Proto, "SPTP", 4) == 0)){
+							// we need to read again
+							trac->readAgain = true;
+							trac->readExtra = (pck->datalen-8)-(nread-(sizeof(Packet)+8));
+
+							char* data = (char*)malloc(nread);
+							memcpy(data, buf->base, nread);
+							uv_write_t* wreq = (uv_write_t*)malloc(sizeof(uv_write_t));
+							uv_buf_t buff = uv_buf_init(data, nread);
+							wreq->data = data;
+							uv_write(wreq, (uv_stream_t*)trac->Socket, &buff, 1, Client::link_write);
+							if(int a = nread - (sizeof(Packet)+pck->datalen); a > 0){
+								// we need to parse another pck
+								char* data = (char*)malloc(nread - (sizeof(Packet)+pck->datalen));
+								memcpy(data, pck->data+pck->datalen, nread - (sizeof(Packet)+pck->datalen));
+								uv_buf_t buff2 = uv_buf_init(data, nread - (sizeof(Packet)+pck->datalen));
+								Client::read(stream, buff2.len, &buff2);
+							}
+							free(buf->base);
+						} else if(strncmp(pck->Proto, "SPTP", 4) == 0){
+
+							sendPck((uv_stream_t*)trac->Socket, Client::link_write, pck->Name, pck->Mode, pck->data, pck->datalen);
+
+							if(int a = nread - (sizeof(Packet)+pck->datalen); a > 0){
+								// we need to parse another pck
+								char* data2 = (char*)malloc(nread - (sizeof(Packet)+pck->datalen));
+								memcpy(data2, pck->data+pck->datalen, nread - (sizeof(Packet)+pck->datalen));
+								uv_buf_t buff2 = uv_buf_init(data2, nread - (sizeof(Packet)+pck->datalen));
+								Client::read(stream, buff2.len, &buff2);
+							}
+							free(buf->base);
+						}
 						return;
 					}
 				}
+				return;
 			}
 			if(client->trac.file == 0){
-				filepath.assign(*client->outDir).append(client->trac.fileReq);
+				filepath.assign(client->outDir->c_str()).append(client->trac.fileReq);
 				uv_fs_open(client->loop, &req, filepath.c_str(), O_CREAT | O_RDWR, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH, NULL);
+				if(req.result <= 0){
+					log_error("Failed to create file. AHHHHHHHHHHHHH");
+				}
 				client->trac.file = req.result;
 				uv_fs_req_cleanup(&req);
 			}
@@ -435,21 +569,17 @@ void Client::read(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf){
 			if(client->trac.readAgain){
 				uv_buf_t buff = uv_buf_init(buf->base, nread);
 				client->trac.readExtra -= buff.len;
-				if(buff.len == client->trac.readExtra){
-					client->trac.readAgain = false;
-					client->trac.readExtra = 0;
-					client->trac.fileOffset += buff.len;
-				} else if(client->trac.readExtra < 0){
+				if(client->trac.readExtra < 0){
 					// we over-read 
 					buff.len += client->trac.readExtra;
 					uv_fs_write(client->loop, &req, client->trac.file, &buff, 1, client->trac.fileOffset, NULL);
 					uv_fs_req_cleanup(&req);
-					client->trac.readAgain = false;
-					client->trac.readExtra = 0;
-					client->trac.fileOffset += buff.len;
 					void* data = malloc(nread - buff.len);
 					memcpy(data, buff.base+(buff.len), nread - buff.len);
 					uv_buf_t buff2 = uv_buf_init((char*)data, nread - buff.len);
+					client->trac.readAgain = false;
+					client->trac.readExtra = 0;
+					client->trac.fileOffset += buff.len;
 					Client::read(stream, buff2.len, &buff2);
 				}
 				else {
@@ -457,18 +587,35 @@ void Client::read(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf){
 					uv_fs_req_cleanup(&req);
 					client->trac.fileOffset += buff.len;
 				}
-			} else if(pck->datalen-8 > nread){
+			} else if((pck->datalen > nread) && (strncmp(pck->Proto, "SPTP", 4) == 0)){
 				uv_buf_t buff = uv_buf_init((char*)pckdata->data, nread-(sizeof(Packet)+8));
 				uv_fs_write(client->loop, &req, client->trac.file, &buff, 1, client->trac.fileOffset, NULL);
 				uv_fs_req_cleanup(&req);
 				client->trac.fileOffset += nread-(sizeof(Packet)+8);
 				client->trac.readAgain = true;
-				client->trac.readExtra = (pck->datalen-8) - (nread-(sizeof(Packet)+8));
+				client->trac.readExtra = (pck->datalen-8) - buff.len;
+				client->dataList.push_back(pckdata->id);
+				if(int a = nread - (sizeof(Packet)+pck->datalen); a > 0){
+					// we need to parse another pck
+					char* data = (char*)malloc(nread - (sizeof(Packet)+pck->datalen));
+					memcpy(data, buf->base+sizeof(Packet)+pck->datalen, nread - (sizeof(Packet)+pck->datalen));
+					uv_buf_t buff2 = uv_buf_init(data, nread - (sizeof(Packet)+pck->datalen));
+					Client::read(stream, buff2.len, &buff2);
+				}
 			} else {
 				uv_buf_t buff = uv_buf_init((char*)pckdata->data, pck->datalen-8);
 				uv_fs_write(client->loop, &req, client->trac.file, &buff, 1, client->trac.fileOffset, NULL);
 				uv_fs_req_cleanup(&req);
 				client->trac.fileOffset += pck->datalen-8;
+				client->dataList.push_back(pckdata->id);
+				
+				if(int a = nread - (sizeof(Packet)+pck->datalen); a > 0){
+					// we need to parse another pck
+					char* data = (char*)malloc(nread - (sizeof(Packet)+pck->datalen));
+					memcpy(data, pck->data+pck->datalen, nread - (sizeof(Packet)+pck->datalen));
+					uv_buf_t buff2 = uv_buf_init(data, nread - (sizeof(Packet)+pck->datalen));
+					Client::read(stream, buff2.len, &buff2);
+				}
 			}
 			client->trac.total_received += 1;
 		}
@@ -487,6 +634,11 @@ void Client::on_close(uv_handle_t *handle){
 }
 
 void Client::link_write(uv_write_t* req, int status){
+	Client* client = (Client*)req->handle->data;
+	if(status < 0){
+		log_error("Failed writing to other clients: [%s]", uv_err_name(status));
+		log_debug("Failed writing to other clients: [%s]", uv_strerror(status));
+	}
 	free(req->data);
 	free(req);
 }

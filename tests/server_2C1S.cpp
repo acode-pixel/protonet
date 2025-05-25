@@ -49,11 +49,11 @@ int main(int argc, char** argv){
     uv_fs_req_cleanup(&req);
 
         #ifdef _WIN32
-        client1 = new Client("Loopback Pseudo-Interface 1", "127.0.0.1", S_PORT, "", "./test_dir/");
-        client2 = new Client("Loopback Pseudo-Interface 1", "127.0.0.1", S_PORT, "", "./test2_dir/");
+        client1 = new Client("Loopback Pseudo-Interface 1", "127.0.0.1", S_PORT, "client1", "./test_dir/");
+        client2 = new Client("Loopback Pseudo-Interface 1", "127.0.0.1", S_PORT, "client2", "./test2_dir/");
     #else
-        client1 = new Client("lo", "127.0.0.1", S_PORT, "", "./test_dir/");
-        client2 = new Client("lo", "127.0.0.1", S_PORT, "", "./test2_dir/");
+        client1 = new Client("lo", "127.0.0.1", S_PORT, "client1", "./test_dir/");
+        client2 = new Client("lo", "127.0.0.1", S_PORT, "client2", "./test2_dir/");
     #endif
 
     uv_thread_t tid;

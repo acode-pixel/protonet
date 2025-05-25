@@ -7,6 +7,7 @@ extern "C" {
 }
 
 #include <string>
+#include <vector>
 #include "./utils.hpp"
 
 // added due to vscode c Intelisense not detecting __FILE_NAME__
@@ -25,12 +26,14 @@ class Client {
         uv_timer_t pollTimeout;
         uv_barrier_t barrier;
 	    int socketMode;
+        vector<int> dataList;
 	    tracItem trac;
 	    string* fileReq = new string();
         uv_loop_t* loop;
         string* outDir = new string();
         bool isPartofaServer = false;
         void* server = NULL;
+        uint* processing_trac = (uint*)malloc(sizeof(uint));
 
         MYLIB_API Client(const char* inter, const char* IP, int serverPort = S_PORT, const char name[] = "", const char outpath[] = "./");
         MYLIB_API ~Client();

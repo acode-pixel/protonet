@@ -22,6 +22,7 @@ extern "C" {
 #include <stdbool.h>
 #include <string.h>
 #include <time.h>
+#include <math.h>
 #include "./log.h"
 #include "./client-wrapper.h"
 #include "./server-wrapper.h"
@@ -39,7 +40,7 @@ extern "C" {
 typedef struct Packet {
 	char Proto[4];
 	char Name[MAX_NAMESIZE];
-	uint8_t Mode;
+	uint32_t Mode;
 	uint32_t datalen;
 
 	uint8_t data[];
@@ -78,7 +79,7 @@ typedef struct tracItem {
 	uv_file file; // fd to requested file (if trac is confirmed)
 	uint fileSize; // size of file requested
 	uint8_t hops; 		// hops between client and server from initial BROD packet
-	uint8_t lifetime; 	// calculated lifetime of packet from hops
+	int8_t lifetime; 	// calculated lifetime of packet from hops
 	uint fileOffset; 	// current file offset
 	bool confirmed; 	// if transaction id is confirmed
 	bool complete;		// if transaction is complete

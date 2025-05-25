@@ -79,6 +79,10 @@ int sendPck(uv_stream_t* stream_tcp, uv_write_cb write_cb, char* Name, uint8_t M
 	memcpy(pck->data, data, pckSize);
 	pck->datalen = pckSize;
 
+	/*if(pck->datalen == 65544){
+		printf("AHHHHHHHHHHHHHHHH");
+	}*/
+
 	uv_buf_t pckbuf[1];
 	pckbuf[0] = uv_buf_init((char*)pck, sizeof(*pck) + pck->datalen);
 	uv_write_t* write = (uv_write_t*)malloc(sizeof(uv_write_t)); // free later
