@@ -110,10 +110,6 @@ void Server::on_connection(uv_stream_t *stream, int status){
 		new_client->socket = (uv_stream_t*)client_conn;
 		new_client->socket->data = new_client;
 
-		if(strcmp(server->serverName.c_str(), "Thread2") == 0){
-			log_trace("AHHHHHHHHHHHHHHHH");
-		}
-
 		server->Clientlist.push_back(new_client);
         uv_read_start(new_client->socket, Server::alloc_buf, Server::pckParser);
     }
@@ -243,14 +239,14 @@ void Server::pckParser(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf){
 		memset(data, 0, sizeof(struct TRAC));
 		strncpy(data->Name, pck->Name, MAX_NAMESIZE);
 		randombytes_buf(&data->tracID, sizeof(data->tracID));
-		data->lifetime = pckData->hops+1;
+		data->lifetime = pckData->hops;
 		data->hops = pckData->hops;
 		data->fileSize = req.statbuf.st_size;
 
 		tracItem* trac = (tracItem*)malloc(sizeof(tracItem));
 		memset(trac, 0, sizeof(tracItem));
 		trac->tracID = data->tracID;
-		trac->lifetime = data->lifetime;
+		trac->lifetime = data->lifetime+server->Clientlist.size();
 		trac->socketStatus = SPTP_TRAC;
 		trac->Socket = (uv_tcp_t*)stream;
 		trac->fileSize = data->fileSize;
@@ -431,7 +427,7 @@ void Server::tracCheck(uv_check_t *handle){
 				trac->complete = true;
 				strcpy((char*)data->data, "EOF");
 				sendPck((uv_stream_t*)trac->Socket, Server::write_cb, (char*)serv->serverName.c_str(), SPTP_DATA, data, sizeof(struct DATA)-(MAX_DATASIZE-3));
-				log_info("Total rx: %d", trac->total_transmitted);
+				log_info("Total tx: %d", trac->total_transmitted);
 			} else {
 				trac->fileOffset += req.result;
 				trac->total_transmitted += 1;
@@ -452,27 +448,6 @@ void Server::on_disconnection(uv_shutdown_t *req, int status){
 	//log_info("Disconnected from network");
 	free(req);
 	return;
-}
-
-void Server::batch_write(uv_write_t *req, int status){
-	if(status < 0){
-		log_error("Server failed to write due to error: [%s]", uv_err_name(status));
-		log_debug("Server failed to write due to error: [%s]", uv_strerror(status));
-		void** things_to_free = (void**)req->data;
-		free(things_to_free[0]);
-		free(things_to_free[1]);
-		free(req);
-		return;
-	}
-
-	Server* serv = (Server*)req->handle->loop->data;
-
-	log_debug("Server[%s] sent DATA packet", serv->serverName.c_str());
-
-	void** things_to_free = (void**)req->data;
-	free(things_to_free[0]);
-	free(things_to_free[1]);
-	free(req);
 }
 
 void Server::on_close(uv_handle_t *handle){

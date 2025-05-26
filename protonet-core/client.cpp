@@ -268,9 +268,6 @@ void Client::read(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf){
 				// WIP (when it isnt for us but we can send it to someone else)
 				Server* server = ((Server*)client->server);
 				pckdata->lifetime -= 1;
-				if(strcmp(server->serverName.c_str(), "Thread2") == 0){
-					log_trace("AHHHHHHHHHHHHHHH");
-				}
 				for(Client* clients : server->Clientlist){
 					tracItem* trac = (tracItem*)malloc(sizeof(tracItem));
 					memset(trac, 0, sizeof(tracItem));
