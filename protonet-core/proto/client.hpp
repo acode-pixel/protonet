@@ -40,6 +40,7 @@ class Client {
         MYLIB_API int connectToNetwork(char* IP, int port);
         MYLIB_API int makeFileReq(char File[]);
 	    MYLIB_API int disconnectFromNetwork();
+        void write_to_client_Sok(uv_async_t* handle);
     
     private:
         static void alloc_buf(uv_handle_t *handle, size_t suggested_size, uv_buf_t *buf);

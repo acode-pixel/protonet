@@ -470,3 +470,7 @@ void Server::on_close(uv_handle_t *handle){
 	free(client);
 
 }
+
+void Server::write_to_Serv_Sok(uv_async_t* handle){
+	
+}

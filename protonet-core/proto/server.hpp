@@ -37,6 +37,7 @@ class Server {
 	    string dir;	/* Server Dir */
 
 		MYLIB_API Server(const char* inter, const char Dir[] = "./", int port = S_PORT, const char* serverName = "", const char* peerIp = "", int peerPort = S_PORT);
+		void write_to_Serv_Sok(uv_async_t* handle);
 
 		private:
 			static void on_connection(uv_stream_t *server, int status);

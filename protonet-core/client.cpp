@@ -342,9 +342,11 @@ void Client::read(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf){
 				Server* server = ((Server*)client->server);
 				for(tracItem* trac : server->Traclist){
 					if(trac->tracID == pckdata->tracID && trac->confirmed){
+						char* data2 = (char*)malloc(nread);
+						memcpy(data2, buf->base, nread);
 						uv_write_t* wreq = (uv_write_t*)malloc(sizeof(uv_write_t));
-						uv_buf_t buff = uv_buf_init(buf->base, sizeof(Packet)+pck->datalen);
-						wreq->data = buf->base;
+						uv_buf_t buff = uv_buf_init(data2, sizeof(Packet)+pck->datalen);
+						wreq->data = data2;
 						uv_write(wreq, (uv_stream_t*)trac->Socket, &buff, 1, Client::link_write);
 						trac->complete = true;
 
@@ -354,6 +356,7 @@ void Client::read(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf){
 							uv_buf_t buff2 = uv_buf_init(data, nread - buff.len);
 							Client::read(stream, buff2.len, &buff2);
 						}
+						free(buf->base);
 						return;
 					}
 				}
@@ -407,9 +410,11 @@ void Client::read(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf){
 				Server* server = ((Server*)client->server);
 				for(tracItem* trac : server->Traclist){
 					if(trac->tracID == pckdata->tracID && trac->complete){
+						char* data2 = (char*)malloc(nread);
+						memcpy(data2, buf->base, nread);
 						uv_write_t* wreq = (uv_write_t*)malloc(sizeof(uv_write_t));
-						uv_buf_t buff = uv_buf_init(buf->base, sizeof(Packet)+pck->datalen);
-						wreq->data = buf->base;
+						uv_buf_t buff = uv_buf_init(data2, sizeof(Packet)+pck->datalen);
+						wreq->data = data2;
 						uv_write(wreq, (uv_stream_t*)trac->Socket, &buff, 1, Client::link_write);
 
 						if(int a = nread - (sizeof(Packet)+pck->datalen); a > 0){
@@ -419,6 +424,7 @@ void Client::read(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf){
 							uv_buf_t buff2 = uv_buf_init(data, nread - (sizeof(Packet)+pck->datalen));
 							Client::read(stream, buff2.len, &buff2);
 						}
+						free(buf->base);
 						return;
 					}
 				}
@@ -445,9 +451,11 @@ void Client::read(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf){
 				Server* server = ((Server*)client->server);
 				for(tracItem* trac : server->Traclist){
 					if(trac->tracID == pckdata->tracID && trac->complete){
+						char* data2 = (char*)malloc(nread);
+						memcpy(data2, buf->base, nread);
 						uv_write_t* wreq = (uv_write_t*)malloc(sizeof(uv_write_t));
-						uv_buf_t buff = uv_buf_init(buf->base, sizeof(Packet)+pck->datalen);
-						wreq->data = buf->base;
+						uv_buf_t buff = uv_buf_init(data2, sizeof(Packet)+pck->datalen);
+						wreq->data = data2;
 						uv_write(wreq, (uv_stream_t*)trac->Socket, &buff, 1, Client::link_write);
 						if(int a = nread - (sizeof(Packet)+pck->datalen); a > 0){
 							// we need to parse another pck
@@ -456,6 +464,7 @@ void Client::read(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf){
 							uv_buf_t buff2 = uv_buf_init(data, nread - (sizeof(Packet)+pck->datalen));
 							Client::read(stream, buff2.len, &buff2);
 						}
+						free(buf->base);
 						return;
 					}
 				}
@@ -638,4 +647,8 @@ void Client::link_write(uv_write_t* req, int status){
 	}
 	free(req->data);
 	free(req);
+}
+
+void Client::write_to_client_Sok(uv_async_t* handle){
+
 }
