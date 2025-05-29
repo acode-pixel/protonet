@@ -94,6 +94,11 @@ typedef struct tracItem {
 
 } tracItem;
 
+typedef struct cross_write_req {
+	uv_stream_t* handle;
+	uv_buf_t buf;
+} cross_write_req;
+
 typedef struct Protonet {
 	bool isUp;
 	bool clientServerHybrid;

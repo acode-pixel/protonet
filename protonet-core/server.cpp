@@ -190,14 +190,17 @@ void Server::pckParser(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf){
 						client->name->assign(pck->Name);
 				}
 				pckData->hops += 1;
-				uv_write_t* wreq = (uv_write_t*)malloc(sizeof(uv_write_t));
+				//uv_write_t* wreq = (uv_write_t*)malloc(sizeof(uv_write_t));
+				cross_write_req* wreq = (cross_write_req*)malloc(sizeof(cross_write_req));
 				char* data = (char*)malloc(sizeof(Packet)+pck->datalen);
 				memcpy(data, buf->base, sizeof(Packet)+pck->datalen);
 				uv_buf_t buff = uv_buf_init(data, sizeof(Packet)+pck->datalen);
-				wreq->cb = Client::link_write;
+				//wreq->cb = Client::link_write;
+				//wreq->handle = (uv_stream_t*)server->client->socket;
+				//wreq->data = data;
+				//memcpy(&wreq->write_buffer, &buff, sizeof(uv_buf_t));
+				wreq->buf = buff;
 				wreq->handle = (uv_stream_t*)server->client->socket;
-				wreq->data = data;
-				memcpy(&wreq->write_buffer, &buff, sizeof(uv_buf_t));
 				uv_mutex_lock(&server->client->cross_write_lock);
 				server->client->cross_writes.push_back(wreq);
 				uv_mutex_unlock(&server->client->cross_write_lock);
@@ -328,14 +331,16 @@ void Server::pckParser(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf){
 			for (tracItem* trac : server->Traclist){
 				if(strncmp(pck->Name, trac->fileRequester, MAX_NAMESIZE) == 0 && data->tracID == trac->tracID && trac->complete){
 					if(server->client != NULL && trac->isLink){
-						uv_write_t* wreq = (uv_write_t*)malloc(sizeof(uv_write_t));
+						cross_write_req* wreq = (cross_write_req*)malloc(sizeof(cross_write_req));
 						char* data = (char*)malloc(sizeof(Packet)+pck->datalen);
 						memcpy(data, buf->base, sizeof(Packet)+pck->datalen);
 						uv_buf_t buff = uv_buf_init(data, sizeof(Packet)+pck->datalen);
-						wreq->cb = Client::link_write;
 						wreq->handle = (uv_stream_t*)server->client->socket;
-						wreq->data = data;
-						memcpy(&wreq->write_buffer, &buff, sizeof(uv_buf_t));
+						wreq->buf = buff;
+						//wreq->cb = Client::link_write;
+						//wreq->handle = (uv_stream_t*)server->client->socket;
+						//wreq->data = data;
+						//memcpy(&wreq->write_buffer, &buff, sizeof(uv_buf_t));
 						uv_mutex_lock(&server->client->cross_write_lock);
 						server->client->cross_writes.push_back(wreq);
 						uv_mutex_unlock(&server->client->cross_write_lock);
@@ -378,14 +383,16 @@ void Server::pckParser(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf){
 						trac->confirmed = true;
 						trac->socketStatus = SPTP_DATA;
 						if(trac->isLink){
-							uv_write_t* wreq = (uv_write_t*)malloc(sizeof(uv_write_t));
+							cross_write_req* wreq = (cross_write_req*)malloc(sizeof(cross_write_req));
 							char* data = (char*)malloc(sizeof(Packet)+pck->datalen);
 							memcpy(data, buf->base, sizeof(Packet)+pck->datalen);
 							uv_buf_t buff = uv_buf_init(data, sizeof(Packet)+pck->datalen);
-							wreq->cb = Client::link_write;
+							//wreq->cb = Client::link_write;
+							//wreq->handle = (uv_stream_t*)server->client->socket;
+							//wreq->data = data;
+							//memcpy(&wreq->write_buffer, &buff, sizeof(uv_buf_t));
 							wreq->handle = (uv_stream_t*)server->client->socket;
-							wreq->data = data;
-							memcpy(&wreq->write_buffer, &buff, sizeof(uv_buf_t));
+							wreq->buf = buff;
 							uv_mutex_lock(&server->client->cross_write_lock);
 							server->client->cross_writes.push_back(wreq);
 							uv_mutex_unlock(&server->client->cross_write_lock);
@@ -518,9 +525,12 @@ void Server::write_to_Serv_Sok(uv_async_t* handle){
 	int nReqs = serv->cross_writes.size();
 
 	for(int a = 0; a < nReqs; a++){
-		uv_write_t* req = serv->cross_writes[a]; 
-		uv_write(req, req->handle, &req->write_buffer, 1, Server::link_write);
+		cross_write_req* wreq = serv->cross_writes[a]; 
+		uv_write_t* req = (uv_write_t*)malloc(sizeof(uv_write_t)); 
+		req->data = wreq->buf.base;
+		uv_write(req, wreq->handle, &wreq->buf, 1, Server::link_write);
 		//serv->cross_writes.erase(it+a);
+		free(wreq);
 	}
 	serv->cross_writes.resize(0);
 	uv_mutex_unlock(&serv->cross_write_lock);

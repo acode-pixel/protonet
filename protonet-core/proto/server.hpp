@@ -36,7 +36,7 @@ class Server {
 	    Client* client;		/* for client-server hybrid */
 	    vector<Client*> Clientlist;
 	    vector<tracItem*> Traclist;
-		vector<uv_write_t*> cross_writes;
+		vector<cross_write_req*> cross_writes;
 	    string dir;	/* Server Dir */
 
 		MYLIB_API Server(const char* inter, const char Dir[] = "./", int port = S_PORT, const char* serverName = "", const char* peerIp = "", int peerPort = S_PORT);

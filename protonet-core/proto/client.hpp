@@ -36,7 +36,7 @@ class Client {
         bool isPartofaServer = false;
         void* server = NULL;
         uint* processing_trac = (uint*)malloc(sizeof(uint));
-        vector<uv_write_t*> cross_writes;
+        vector<cross_write_req*> cross_writes;
 
         MYLIB_API Client(const char* inter, const char* IP, int serverPort = S_PORT, const char name[] = "", const char outpath[] = "./");
         MYLIB_API ~Client();
