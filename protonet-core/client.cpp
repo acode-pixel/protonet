@@ -280,7 +280,19 @@ void Client::read(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf){
 					strncpy(trac->fileRequester, pckdata->Name, MAX_NAMESIZE);
 					//strcpy(trac->fileReq, filepath);
 					server->Traclist.push_back(trac);
-					sendPck(clients->socket, NULL, pck->Name, pck->Mode, pckdata, pck->datalen);
+					char* data2 = (char*)malloc(sizeof(Packet)+pck->datalen);
+					uv_write_t* wreq = (uv_write_t*)malloc(sizeof(uv_write_t));
+					memcpy(data2, buf->base, sizeof(Packet)+pck->datalen);
+					uv_buf_t buff = uv_buf_init(data2, sizeof(Packet)+pck->datalen);
+					wreq->cb = Server::link_write;
+					wreq->data = data2;
+					wreq->handle = clients->socket;
+					memcpy(&wreq->write_buffer, &buff, sizeof(uv_buf_t));
+					uv_mutex_lock(&server->cross_write_lock);
+					server->cross_writes.push_back(wreq);
+					uv_mutex_unlock(&server->cross_write_lock);
+					uv_async_send(&server->cross_write);
+					//sendPck(clients->socket, NULL, pck->Name, pck->Mode, pckdata, pck->datalen);
 				}
 			}
 			if(int a = nread - (sizeof(Packet)+pck->datalen); a > 0){
@@ -347,7 +359,14 @@ void Client::read(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf){
 						uv_write_t* wreq = (uv_write_t*)malloc(sizeof(uv_write_t));
 						uv_buf_t buff = uv_buf_init(data2, sizeof(Packet)+pck->datalen);
 						wreq->data = data2;
-						uv_write(wreq, (uv_stream_t*)trac->Socket, &buff, 1, Client::link_write);
+						wreq->cb = Server::link_write;
+						wreq->handle = (uv_stream_t*)trac->Socket;
+						memcpy(&wreq->write_buffer, &buff, sizeof(uv_buf_t));
+						uv_mutex_lock(&server->cross_write_lock);
+						server->cross_writes.push_back(wreq);
+						uv_mutex_unlock(&server->cross_write_lock);
+						uv_async_send(&server->cross_write);
+						//uv_write(wreq, (uv_stream_t*)trac->Socket, &buff, 1, Client::link_write);
 						trac->complete = true;
 
 						if(nread > buff.len){
@@ -368,7 +387,7 @@ void Client::read(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf){
 				}
 				return;
 			}
-			uv_fs_ftruncate(client->loop, &req, client->trac.file, client->trac.fileSize, NULL);
+			//uv_fs_ftruncate(client->loop, &req, client->trac.file, client->trac.fileSize, NULL);
 			//uv_fs_req_cleanup(&req);
 
 			uv_fs_close(client->loop, &req, client->trac.file, NULL);
@@ -415,7 +434,14 @@ void Client::read(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf){
 						uv_write_t* wreq = (uv_write_t*)malloc(sizeof(uv_write_t));
 						uv_buf_t buff = uv_buf_init(data2, sizeof(Packet)+pck->datalen);
 						wreq->data = data2;
-						uv_write(wreq, (uv_stream_t*)trac->Socket, &buff, 1, Client::link_write);
+						wreq->cb = Server::link_write;
+						wreq->handle = (uv_stream_t*)trac->Socket;
+						memcpy(&wreq->write_buffer, &buff, sizeof(uv_buf_t));
+						uv_mutex_lock(&server->cross_write_lock);
+						server->cross_writes.push_back(wreq);
+						uv_mutex_unlock(&server->cross_write_lock);
+						uv_async_send(&server->cross_write);
+						//uv_write(wreq, (uv_stream_t*)trac->Socket, &buff, 1, Client::link_write);
 
 						if(int a = nread - (sizeof(Packet)+pck->datalen); a > 0){
 							// we need to parse another pck
@@ -456,7 +482,14 @@ void Client::read(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf){
 						uv_write_t* wreq = (uv_write_t*)malloc(sizeof(uv_write_t));
 						uv_buf_t buff = uv_buf_init(data2, sizeof(Packet)+pck->datalen);
 						wreq->data = data2;
-						uv_write(wreq, (uv_stream_t*)trac->Socket, &buff, 1, Client::link_write);
+						wreq->cb = Server::link_write;
+						wreq->handle = (uv_stream_t*)trac->Socket;
+						memcpy(&wreq->write_buffer, &buff, sizeof(uv_buf_t));
+						uv_mutex_lock(&server->cross_write_lock);
+						server->cross_writes.push_back(wreq);
+						uv_mutex_unlock(&server->cross_write_lock);
+						uv_async_send(&server->cross_write);
+						//uv_write(wreq, (uv_stream_t*)trac->Socket, &buff, 1, Client::link_write);
 						if(int a = nread - (sizeof(Packet)+pck->datalen); a > 0){
 							// we need to parse another pck
 							char* data = (char*)malloc(nread - (sizeof(Packet)+pck->datalen));
@@ -510,7 +543,14 @@ void Client::read(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf){
 								uv_write_t* wreq = (uv_write_t*)malloc(sizeof(uv_write_t));
 								uv_buf_t buff = uv_buf_init(buf2, nread+trac->readExtra);
 								wreq->data = buf2;
-								uv_write(wreq, (uv_stream_t*)trac->Socket, &buff, 1, Client::link_write);
+								wreq->cb = Server::link_write;
+								wreq->handle = (uv_stream_t*)trac->Socket;
+								memcpy(&wreq->write_buffer, &buff, sizeof(uv_buf_t));
+								uv_mutex_lock(&server->cross_write_lock);
+								server->cross_writes.push_back(wreq);
+								uv_mutex_unlock(&server->cross_write_lock);
+								uv_async_send(&server->cross_write);
+								//uv_write(wreq, (uv_stream_t*)trac->Socket, &buff, 1, Client::link_write);
 	
 								char* data = (char*)malloc(-trac->readExtra);
 								memcpy(data, buf->base+(nread+trac->readExtra), -trac->readExtra);
@@ -523,7 +563,14 @@ void Client::read(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf){
 								uv_write_t* wreq = (uv_write_t*)malloc(sizeof(uv_write_t));
 								uv_buf_t buff = uv_buf_init(buf->base, nread);
 								wreq->data = buf->base;
-								uv_write(wreq, (uv_stream_t*)trac->Socket, &buff, 1, Client::link_write);
+								wreq->cb = Server::link_write;
+								wreq->handle = (uv_stream_t*)trac->Socket;
+								memcpy(&wreq->write_buffer, &buff, sizeof(uv_buf_t));
+								uv_mutex_lock(&server->cross_write_lock);
+								server->cross_writes.push_back(wreq);
+								uv_mutex_unlock(&server->cross_write_lock);
+								uv_async_send(&server->cross_write);
+								//uv_write(wreq, (uv_stream_t*)trac->Socket, &buff, 1, Client::link_write);
 							}
 						} else if((pck->datalen > nread) && (strncmp(pck->Proto, "SPTP", 4) == 0)){
 							// we need to read again
@@ -535,7 +582,15 @@ void Client::read(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf){
 							uv_write_t* wreq = (uv_write_t*)malloc(sizeof(uv_write_t));
 							uv_buf_t buff = uv_buf_init(data, nread);
 							wreq->data = data;
-							uv_write(wreq, (uv_stream_t*)trac->Socket, &buff, 1, Client::link_write);
+							wreq->cb = Server::link_write;
+							wreq->handle = (uv_stream_t*)trac->Socket;
+							//wreq->write_buffer = buff;
+							memcpy(&wreq->write_buffer, &buff, sizeof(uv_buf_t));
+							uv_mutex_lock(&server->cross_write_lock);
+							server->cross_writes.push_back(wreq);
+							uv_mutex_unlock(&server->cross_write_lock);
+							uv_async_send(&server->cross_write);
+							//uv_write(wreq, (uv_stream_t*)trac->Socket, &buff, 1, Client::link_write);
 							if(int a = nread - (sizeof(Packet)+pck->datalen); a > 0){
 								// we need to parse another pck
 								char* data = (char*)malloc(nread - (sizeof(Packet)+pck->datalen));
@@ -546,7 +601,19 @@ void Client::read(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf){
 							free(buf->base);
 						} else if(strncmp(pck->Proto, "SPTP", 4) == 0){
 
-							sendPck((uv_stream_t*)trac->Socket, Client::link_write, pck->Name, pck->Mode, pck->data, pck->datalen);
+							uv_write_t* wreq = (uv_write_t*)malloc(sizeof(uv_write_t));
+							char* data = (char*)malloc(sizeof(Packet)+pck->datalen);
+							memcpy(data, buf->base, sizeof(Packet)+pck->datalen);
+							uv_buf_t buff = uv_buf_init(data, sizeof(Packet)+pck->datalen);
+							wreq->cb = Server::link_write;
+							wreq->data = data;
+							wreq->handle = (uv_stream_t*)trac->Socket;
+							memcpy(&wreq->write_buffer, &buff, sizeof(uv_buf_t));
+							uv_mutex_lock(&server->cross_write_lock);
+							server->cross_writes.push_back(wreq);
+							uv_mutex_unlock(&server->cross_write_lock);
+							uv_async_send(&server->cross_write);
+							//sendPck((uv_stream_t*)trac->Socket, Client::link_write, pck->Name, pck->Mode, pck->data, pck->datalen);
 
 							if(int a = nread - (sizeof(Packet)+pck->datalen); a > 0){
 								// we need to parse another pck
@@ -642,13 +709,24 @@ void Client::on_close(uv_handle_t *handle){
 void Client::link_write(uv_write_t* req, int status){
 	Client* client = (Client*)req->handle->data;
 	if(status < 0){
-		log_error("Failed writing to other clients: [%s]", uv_err_name(status));
-		log_debug("Failed writing to other clients: [%s]", uv_strerror(status));
+		log_error("Server[%s] failed writing to client-side: [%s]", client->name->c_str(), uv_err_name(status));
+		log_debug("Server[%s] failed writing to client-side: [%s]", client->name->c_str(), uv_strerror(status));
 	}
 	free(req->data);
 	free(req);
 }
 
 void Client::write_to_client_Sok(uv_async_t* handle){
+	Client* client = (Client*)handle->loop->data;
+	uv_mutex_lock(&client->cross_write_lock);
+	auto it = client->cross_writes.begin();
+	int nReqs = client->cross_writes.size();
+
+	for(int a = 0; a < nReqs; a++){
+		uv_write_t* req = client->cross_writes[a]; 
+		uv_write(req, req->handle, &req->write_buffer, 1, Client::link_write);
+	}
+	client->cross_writes.resize(0);
+	uv_mutex_unlock(&client->cross_write_lock);
 
 }

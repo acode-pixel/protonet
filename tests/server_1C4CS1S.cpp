@@ -13,7 +13,7 @@ int main(int argc, char** argv){
 
     uv_fs_t req;
     #ifdef _WIN32
-    server1 = new Server("Loopback Pseudo-Interface 1");
+    server1 = new Server("Loopback Pseudo-Interface 1", "./", 5657, "MainServ");
     #else
     server1 = new Server("lo");
     #endif
@@ -53,21 +53,21 @@ int main(int argc, char** argv){
     uv_fs_req_cleanup(&req);
 
     #ifdef _WIN32
-    server2 = new Server("Loopback Pseudo-Interface 1", "./server2/", 5656, "", "127.0.0.1");
-    server3 = new Server("Loopback Pseudo-Interface 1", "./server3/", 5655, "", "127.0.0.1", 5656);
-    server4 = new Server("Loopback Pseudo-Interface 1", "./server2/", 5654, "", "127.0.0.1", 5655);
-    server5 = new Server("Loopback Pseudo-Interface 1", "./server3/", 5653, "", "127.0.0.1", 5654);
+    server2 = new Server("Loopback Pseudo-Interface 1", "./server2/", 5656, "Thread1", "127.0.0.1");
+    server3 = new Server("Loopback Pseudo-Interface 1", "./server3/", 5655, "Thread2", "127.0.0.1", 5656);
+    server4 = new Server("Loopback Pseudo-Interface 1", "./server2/", 5654, "Thread3", "127.0.0.1", 5655);
+    server5 = new Server("Loopback Pseudo-Interface 1", "./server3/", 5653, "Thread4", "127.0.0.1", 5654);
     #else
-    server2 = new Server("lo", "./server2/", 5656, "", "127.0.0.1");
-    server3 = new Server("lo", "./server3/", 5655, "", "127.0.0.1", 5656);
-    server4 = new Server("lo", "./server2/", 5654, "", "127.0.0.1", 5655);
-    server5 = new Server("lo", "./server3/", 5653, "", "127.0.0.1", 5654);
+    server2 = new Server("lo", "./server2/", 5656, "Thread1", "127.0.0.1");
+    server3 = new Server("lo", "./server3/", 5655, "Thread2", "127.0.0.1", 5656);
+    server4 = new Server("lo", "./server2/", 5654, "Thread3", "127.0.0.1", 5655);
+    server5 = new Server("lo", "./server3/", 5653, "Thread4", "127.0.0.1", 5654);
     #endif
 
     #ifdef _WIN32
-    client = new Client("Loopback Pseudo-Interface 1", "127.0.0.1", 5653, "", "./client/");
+    client = new Client("Loopback Pseudo-Interface 1", "127.0.0.1", 5653, "client1", "./client/");
     #else
-    client = new Client("lo", "127.0.0.1", 5653, "", "./client/");
+    client = new Client("lo", "127.0.0.1", 5653, "client1", "./client/");
     #endif
 
     client->makeFileReq("test.txt");

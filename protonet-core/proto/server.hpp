@@ -27,6 +27,8 @@ class Server {
 		uv_thread_t tid;
 		uv_timer_t pollTimeout;
 		uv_check_t tracChecker;
+		uv_async_t cross_write;
+		uv_mutex_t cross_write_lock;
 	    int nConn;
 	    char IP[INET_ADDRSTRLEN];		/* host IP */
 	    char destIP[INET_ADDRSTRLEN];	/* Destination IP */
@@ -34,10 +36,12 @@ class Server {
 	    Client* client;		/* for client-server hybrid */
 	    vector<Client*> Clientlist;
 	    vector<tracItem*> Traclist;
+		vector<uv_write_t*> cross_writes;
 	    string dir;	/* Server Dir */
 
 		MYLIB_API Server(const char* inter, const char Dir[] = "./", int port = S_PORT, const char* serverName = "", const char* peerIp = "", int peerPort = S_PORT);
-		void write_to_Serv_Sok(uv_async_t* handle);
+		static void write_to_Serv_Sok(uv_async_t* handle);
+		static void link_write(uv_write_t* req, int status);
 
 		private:
 			static void on_connection(uv_stream_t *server, int status);
