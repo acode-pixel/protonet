@@ -44,7 +44,7 @@ Tests:
 		✅client, server, and client-server hybrid
 		✅client, server, and 2 client-erver hybrids
 		✅client, server, and 4 client-erver hybrids
-		2 clients, server, and 4 client-erver hybrids
+		✅2 clients, server, and 4 client-erver hybrids
 		4 clients connected to each client-server hybrids with one server
 
 	Complex:
