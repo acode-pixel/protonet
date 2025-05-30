@@ -60,9 +60,9 @@ Server::Server(const char* inter, const char Dir[], int port, const char* server
 		strcpy(this->IP, peerIp);
 	}
 
-	memset(&this->pollTimeout, 0, sizeof(uv_timer_t));
-	uv_timer_init(this->loop, &this->pollTimeout);
-	uv_timer_start(&this->pollTimeout, NOP, 200, 200);
+	memset(&this->tracChecker, 0, sizeof(uv_timer_t));
+	uv_timer_init(this->loop, &this->tracChecker);
+	uv_timer_start(&this->tracChecker, tracCheck, 100, 100);
 
 	uv_fs_t req;
 	memset(&req, 0, sizeof(uv_fs_t));
@@ -76,8 +76,8 @@ Server::Server(const char* inter, const char Dir[], int port, const char* server
 
 	uv_thread_create(&this->tid, Server::threadStart, this);
 
-	uv_check_init(this->loop, &this->tracChecker);
-	uv_check_start(&this->tracChecker, Server::tracCheck);
+	//uv_check_init(this->loop, &this->tracChecker);
+	//uv_check_start(&this->tracChecker, Server::tracCheck);
 
 	log_info("Successfully created Server");
 	log_info("Started server thread: %lu", this->tid);
@@ -416,7 +416,7 @@ void Server::pckParser(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf){
 	return;
 }
 
-void Server::tracCheck(uv_check_t *handle){
+void Server::tracCheck(uv_timer_t *handle){
 	//Server* serv = (Server*)proto_getServer();
 	Server* serv = (Server*)handle->loop->data;
 	if(serv->Traclist.size() != 0){

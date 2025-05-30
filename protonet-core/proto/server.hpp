@@ -25,8 +25,7 @@ class Server {
 	    uv_tcp_t* Socket;		/* Socket */
 		uv_loop_t* loop;
 		uv_thread_t tid;
-		uv_timer_t pollTimeout;
-		uv_check_t tracChecker;
+		uv_timer_t tracChecker;
 		uv_async_t cross_write;
 		uv_mutex_t cross_write_lock;
 	    int nConn;
@@ -49,7 +48,7 @@ class Server {
 			static void pckParser(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf);
 			static void alloc_buf(uv_handle_t *handle, size_t suggested_size, uv_buf_t *buf);
 			static void write_cb(uv_write_t *req, int status);
-			static void tracCheck(uv_check_t *handle);
+			static void tracCheck(uv_timer_t *handle);
 			static void threadStart(void* data);
 			static void on_close(uv_handle_t *handle);
 
