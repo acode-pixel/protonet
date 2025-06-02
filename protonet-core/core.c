@@ -54,8 +54,8 @@ uv_interface_address_t getInterIP(char interface_name[]){
     int count;
 	uv_interface_address_t inter;
     uv_interface_addresses(&interfaces, &count);
-
-    for(int i = 0; i < count; i++){
+	int i = count;
+    while(i--){
         char ip[INET_ADDRSTRLEN];
         memcpy(&inter, &interfaces[i], sizeof(uv_interface_address_t));
 		if(strcmp(inter.name, interface_name) == 0){
