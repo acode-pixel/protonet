@@ -50,6 +50,13 @@ int clientServerHybrid(char* ServerInterface, char* IP){
 }
 
 uv_interface_address_t getInterIP(char interface_name[]){
+	if(strcmp(interface_name, "All") == 0){
+		uv_interface_address_t inter;
+		memset(&inter.address.address4.sin_addr, 0, sizeof(struct in_addr));
+		inter.address.address4.sin_family = AF_INET;
+		inter.is_internal = 0;
+		return inter;
+	}
 	uv_interface_address_t* interfaces;
     int count;
 	uv_interface_address_t inter;
